@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Philadelphia General Fund — Revenue to Expenditure Flows</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; background: #f4f6f8; padding: 16px; }
+  .wrap { max-width: 1260px; margin: 0 auto; }
+  h2 { font-size: 16px; font-weight: bold; color: #1b2a3b; margin-bottom: 3px; }
+  .sub { font-size: 11px; color: #4a6070; margin-bottom: 12px; line-height: 1.6; }
+  .ctrl { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .ybtn { padding: 5px 13px; border: 2px solid #d8dde4; background: white; border-radius: 4px;
+          cursor: pointer; font-size: 11px; font-weight: 700; color: #3d5166; line-height: 1.7;
+          text-align: center; transition: all .15s; }
+  .ybtn:hover { border-color: #3d5166; }
+  .ybtn.on { background: #1b2a3b; color: white; border-color: #1b2a3b; }
+  .tag { display: block; font-size: 9px; font-weight: 600; }
+  .ta { color: #1e6b3a; } .te { color: #b8930a; } .tp { color: #1a5276; }
+  .ybtn.on .tag { color: #9ecfc5; }
+  #cw { background: white; border-radius: 6px; padding: 14px 4px 10px;
+        box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  svg { display: block; width: 100%; overflow: visible; }
+  .lnk { fill-opacity: .38; transition: fill-opacity .15s; cursor: default; }
+  .lnk:hover { fill-opacity: .7; }
+  .leg { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 10px; font-size: 10px; }
+  .lg { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: center; }
+  .lh { font-weight: 700; font-size: 10px; color: #1b2a3b; }
+  .li { display: flex; align-items: center; gap: 4px; color: #4a6070; }
+  .ls { width: 10px; height: 10px; border-radius: 2px; flex-shrink: 0; }
+  .ft { font-size: 9px; color: #aaa; margin-top: 8px; line-height: 1.7; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h2>City of Philadelphia — General Fund: Revenue to Expenditure Flows</h2>
+  <div class="sub">Each band shows how a revenue source funded each spending category. Hover any band for the exact flow.
+  Deficit years show a <strong style="color:#6c3483">From Reserves</strong> bar on the revenue side; surplus years show
+  <strong style="color:#2d7a5f">Surplus to Reserves</strong> on the expenditure side, so both sides always balance.</div>
+  <div class="ctrl" id="ctrl"></div>
+  <div id="cw"><svg id="sk" viewBox="0 0 1220 640"></svg></div>
+  <div class="leg" id="leg"></div>
+  <div class="ft">Sources: Plan 1 (FY2022 actuals) · Plan 2 (FY2023 actuals) · Plan 3 (FY2024 actuals) ·
+  Plan 4 (FY2025 actuals; FY2026 mid-year estimate; FY2027 proposed budget).
+  Pensions &amp; Benefits = pension + health insurance + disability + FICA + group life/legal. Figures in $M rounded.</div>
+</div>
+
+<script>
+const YRS = {
+  "FY2022":{ s:"ACTUAL",t:"a",
+    r:{"Taxes":4139,"Non-Tax Revenue":396,"Other Govts":376,"PICA":555,"Other Funds / ARP":301},
+    e:{"Wages":1891,"Pensions & Benefits":1690,"Contracts & Services":1014,"Materials & Equip.":126,
+       "Contributions & Ind.":385,"Debt Service":189,"Pmts to Other Funds":44,"Budget Stabilization":0}},
+  "FY2023":{ s:"ACTUAL",t:"a",
+    r:{"Taxes":4154,"Non-Tax Revenue":375,"Other Govts":349,"PICA":638,"Other Funds / ARP":531},
+    e:{"Wages":2089,"Pensions & Benefits":1606,"Contracts & Services":1246,"Materials & Equip.":187,
+       "Contributions & Ind.":466,"Debt Service":194,"Pmts to Other Funds":205,"Budget Stabilization":65}},
+  "FY2024":{ s:"ACTUAL",t:"a",
+    r:{"Taxes":4088,"Non-Tax Revenue":456,"Other Govts":359,"PICA":706,"Other Funds / ARP":455},
+    e:{"Wages":2038,"Pensions & Benefits":1664,"Contracts & Services":1360,"Materials & Equip.":190,
+       "Contributions & Ind.":453,"Debt Service":189,"Pmts to Other Funds":199,"Budget Stabilization":42}},
+  "FY2025":{ s:"ACTUAL",t:"a",
+    r:{"Taxes":4413,"Non-Tax Revenue":466,"Other Govts":389,"PICA":761,"Other Funds / ARP":488},
+    e:{"Wages":2223,"Pensions & Benefits":1626,"Contracts & Services":1452,"Materials & Equip.":165,
+       "Contributions & Ind.":475,"Debt Service":195,"Pmts to Other Funds":123,"Budget Stabilization":58}},
+  "FY2026":{ s:"MID-YR EST.",t:"e",
+    r:{"Taxes":4585,"Non-Tax Revenue":473,"Other Govts":438,"PICA":763,"Other Funds / ARP":80},
+    e:{"Wages":2413,"Pensions & Benefits":1723,"Contracts & Services":1578,"Materials & Equip.":171,
+       "Contributions & Ind.":477,"Debt Service":222,"Pmts to Other Funds":151,"Budget Stabilization":59,"Labor Reserve":16}},
+  "FY2027":{ s:"PROPOSED",t:"p",
+    r:{"Taxes":4787,"Non-Tax Revenue":395,"Other Govts":481,"PICA":797,"Other Funds / ARP":66},
+    e:{"Wages":2462,"Pensions & Benefits":1821,"Contracts & Services":1648,"Materials & Equip.":175,
+       "Contributions & Ind.":433,"Debt Service":241,"Pmts to Other Funds":95,"Budget Stabilization":52,"Labor Reserve":39}}
+};
+
+// Base colours (balancing nodes get their own)
+const RC0 = {"Taxes":"#1b2a3b","Non-Tax Revenue":"#2e6e9e","Other Govts":"#1e6b3a",
+             "PICA":"#2d9147","Other Funds / ARP":"#b8930a","From Reserves":"#6c3483"};
+const EC0 = {"Wages":"#b92b1a","Pensions & Benefits":"#d4661a","Contracts & Services":"#5b2d8a",
+             "Materials & Equip.":"#7a6200","Contributions & Ind.":"#1a5276","Debt Service":"#2c3e50",
+             "Pmts to Other Funds":"#3d5166","Budget Stabilization":"#5d737e","Labor Reserve":"#8fa3af",
+             "Surplus to Reserves":"#2d7a5f"};
+
+let cur = "FY2025";
+
+// Build balanced data: add From Reserves or Surplus to Reserves
+function balanced(yr) {
+  const d = YRS[yr];
+  const totR = Object.values(d.r).reduce((a,b)=>a+b,0);
+  const totE = Object.values(d.e).filter(v=>v>0).reduce((a,b)=>a+b,0);
+  const diff = Math.round(totR - totE);
+  let R = {...d.r}, E = {};
+  Object.entries(d.e).forEach(([k,v])=>{ if(v>0) E[k]=v; });
+  if (diff < 0) {
+    R["From Reserves"] = -diff;          // deficit: add revenue from reserves
+  } else if (diff > 0) {
+    E["Surplus to Reserves"] = diff;     // surplus: add expenditure node
+  }
+  const tot = Object.values(R).reduce((a,b)=>a+b,0); // should equal sum of E now
+  return { R, E, tot };
+}
+
+// Controls
+const ctrlEl = document.getElementById("ctrl");
+Object.keys(YRS).forEach(yr => {
+  const y = YRS[yr];
+  const btn = document.createElement("button");
+  btn.className = "ybtn"+(yr===cur?" on":"");
+  btn.innerHTML = `${yr}<span class="tag t${y.t}">${y.s}</span>`;
+  btn.onclick = () => { cur=yr; document.querySelectorAll(".ybtn").forEach(b=>b.classList.remove("on")); btn.classList.add("on"); draw(); };
+  ctrlEl.appendChild(btn);
+});
+
+// Legend (base colours only)
+const legEl = document.getElementById("leg");
+[["REVENUE",RC0],["EXPENDITURE",EC0]].forEach(([h,m])=>{
+  const g=document.createElement("div"); g.className="lg";
+  const hh=document.createElement("span"); hh.className="lh"; hh.textContent=h; g.appendChild(hh);
+  Object.entries(m).forEach(([k,c])=>{
+    const i=document.createElement("div"); i.className="li";
+    i.innerHTML=`<div class="ls" style="background:${c}"></div><span>${k}</span>`;
+    g.appendChild(i);
+  });
+  legEl.appendChild(g);
+});
+
+function svgT(p,x,y,txt,anchor,sz,col,bold,bl){
+  const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+  t.setAttribute("x",x); t.setAttribute("y",y);
+  t.setAttribute("text-anchor",anchor||"start");
+  t.setAttribute("font-size",sz||"11"); t.setAttribute("font-family","Arial");
+  t.setAttribute("fill",col||"#1a2530");
+  if(bold) t.setAttribute("font-weight","700");
+  if(bl)   t.setAttribute("dominant-baseline",bl);
+  t.textContent=txt; p.appendChild(t);
+}
+
+function draw(){
+  const svg = document.getElementById("sk");
+  svg.innerHTML="";
+  const W=1220,H=640,PL=186,PR_N=16,PT=36,PB=66,GAP=6;
+  const iH=H-PT-PB;
+
+  const {R,E,tot} = balanced(cur);
+  const rKeys=Object.keys(R), eKeys=Object.keys(E);
+
+  // Both sides use THE SAME reference total → same pixels-per-dollar
+  const rScale=(iH-GAP*(rKeys.length-1))/tot;
+  const eScale=(iH-GAP*(eKeys.length-1))/tot;
+
+  let rNodes=[],y=0;
+  rKeys.forEach(k=>{ const h=Math.max(R[k]*rScale,2); rNodes.push({key:k,y:PT+y,h,val:R[k]}); y+=h+GAP; });
+
+  let eNodes=[],y2=0;
+  eKeys.forEach(k=>{ const h=Math.max(E[k]*eScale,2); eNodes.push({key:k,y:PT+y2,h,val:E[k]}); y2+=h+GAP; });
+
+  const rX=PL, eX=730;
+  const g=document.createElementNS("http://www.w3.org/2000/svg","g");
+  svg.appendChild(g);
+
+  // ── LINKS ──────────────────────────────────────────────────────────────────
+  // With balanced totals: flow = rn.val * (en.val/tot)
+  // → sum from rn = rn.val * (tot/tot) = rn.val  ✓  left side always exact
+  // → sum to en   = en.val * (tot/tot) = en.val  ✓  right side always exact
+  const rOff={},eOff={};
+  rNodes.forEach(n=>rOff[n.key]=0);
+  eNodes.forEach(n=>eOff[n.key]=0);
+
+  const lgG=document.createElementNS("http://www.w3.org/2000/svg","g");
+  g.appendChild(lgG);
+
+  rNodes.forEach(rn=>{
+    eNodes.forEach(en=>{
+      const flow = rn.val*(en.val/tot);           // ← corrected formula
+      if(flow<0.5) return;
+      const fhr = flow*(rn.h/rn.val);
+      const fhe = flow*(en.h/en.val);
+      const y0t=rn.y+rOff[rn.key], y0b=y0t+fhr;
+      const y1t=en.y+eOff[en.key], y1b=y1t+fhe;
+      rOff[rn.key]+=fhr; eOff[en.key]+=fhe;
+      const c1x=rX+PR_N+(eX-rX-PR_N)*0.38;
+      const c2x=rX+PR_N+(eX-rX-PR_N)*0.62;
+      const col = (rn.key==="From Reserves") ? RC0["From Reserves"] : RC0[rn.key]||"#888";
+      const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+      p.setAttribute("d",
+        `M${rX+PR_N},${y0t} C${c1x},${y0t} ${c2x},${y1t} ${eX},${y1t}
+         L${eX},${y1b} C${c2x},${y1b} ${c1x},${y0b} ${rX+PR_N},${y0b} Z`);
+      p.setAttribute("fill",col); p.setAttribute("class","lnk");
+      const tip=document.createElementNS("http://www.w3.org/2000/svg","title");
+      tip.textContent=`${rn.key}  →  ${en.key}\n$${Math.round(flow).toLocaleString()}M`;
+      p.appendChild(tip); lgG.appendChild(p);
+    });
+  });
+
+  // ── REVENUE NODES + LABELS (left) ─────────────────────────────────────────
+  rNodes.forEach(n=>{
+    const col = RC0[n.key]||"#888";
+    const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
+    r.setAttribute("x",rX); r.setAttribute("y",n.y);
+    r.setAttribute("width",PR_N); r.setAttribute("height",n.h);
+    r.setAttribute("fill",col); r.setAttribute("rx",2);
+    g.appendChild(r);
+    const cy=n.y+n.h/2;
+    svgT(g,rX-7,cy-6,n.key,"end","10.5","#1a2530",false,"middle");
+    svgT(g,rX-7,cy+7,`$${n.val.toLocaleString()}M`,"end","9.5",col,true,"middle");
+  });
+
+  // ── EXPENDITURE NODES (right) + EVENLY SPACED LABELS ─────────────────────
+  eNodes.forEach(n=>{
+    const col=(n.key==="Surplus to Reserves")?EC0["Surplus to Reserves"]:EC0[n.key]||"#888";
+    const r=document.createElementNS("http://www.w3.org/2000/svg","rect");
+    r.setAttribute("x",eX); r.setAttribute("y",n.y);
+    r.setAttribute("width",PR_N); r.setAttribute("height",n.h);
+    r.setAttribute("fill",col); r.setAttribute("rx",2);
+    g.appendChild(r);
+    n.col=col;
+  });
+
+  // Fixed label column with even vertical distribution
+  const LABX=eX+PR_N+46, TICKX=eX+PR_N+3;
+  const margin=10, span=iH-2*margin;
+  const nE=eNodes.length;
+  eNodes.forEach((node,i)=>{
+    const lcy = PT+margin + i*(span/(nE-1||1));
+    const ncy = node.y+node.h/2;
+    // Curved dashed connector
+    const mid=(LABX-TICKX)*0.55+TICKX;
+    const path=document.createElementNS("http://www.w3.org/2000/svg","path");
+    path.setAttribute("d",`M${TICKX},${ncy} C${mid},${ncy} ${mid},${lcy} ${LABX},${lcy}`);
+    path.setAttribute("fill","none"); path.setAttribute("stroke",node.col);
+    path.setAttribute("stroke-width","1.1"); path.setAttribute("stroke-opacity","0.5");
+    path.setAttribute("stroke-dasharray","3 2"); g.appendChild(path);
+    // Dot at node
+    const dot=document.createElementNS("http://www.w3.org/2000/svg","circle");
+    dot.setAttribute("cx",TICKX); dot.setAttribute("cy",ncy); dot.setAttribute("r","2.2");
+    dot.setAttribute("fill",node.col); g.appendChild(dot);
+    // Colour swatch + label
+    const sq=document.createElementNS("http://www.w3.org/2000/svg","rect");
+    sq.setAttribute("x",LABX); sq.setAttribute("y",lcy-4.5);
+    sq.setAttribute("width","9"); sq.setAttribute("height","9");
+    sq.setAttribute("fill",node.col); sq.setAttribute("rx","1"); g.appendChild(sq);
+    svgT(g,LABX+13,lcy,node.key,"start","10.5","#1a2530",false,"middle");
+    svgT(g,LABX+13,lcy+13,`$${node.val.toLocaleString()}M`,"start","9.5",node.col,true,"middle");
+  });
+
+  // ── FOOTER ─────────────────────────────────────────────────────────────────
+  const bY=H-PB+22;
+  const rawR=Object.entries(R).filter(([k])=>k!=="From Reserves").reduce((a,[,v])=>a+v,0);
+  const rawE=Object.entries(E).filter(([k])=>k!=="Surplus to Reserves").reduce((a,[,v])=>a+v,0);
+  const surplus=rawR-rawE;
+  const sc=surplus>=0?"#1e6b3a":"#b92b1a";
+  const st=surplus>=0?`Surplus: +$${surplus.toLocaleString()}M`:`Operating Deficit: ($${Math.abs(surplus).toLocaleString()}M)`;
+  svgT(g,rX+PR_N/2,bY,`Total Revenue: $${rawR.toLocaleString()}M`,"middle","11","#1b2a3b",true);
+  svgT(g,eX+PR_N/2,bY,`Total Spending: $${rawE.toLocaleString()}M`,"middle","11","#1b2a3b",true);
+  const mx=(rX+PR_N+eX)/2;
+  svgT(g,mx,bY,`${cur}  ${YRS[cur].s}    |    ${st}`,"middle","12",sc,true);
+  svgT(g,mx,PT-16,"← Revenue sources                                          Expenditure categories →","middle","9.5","#8a9aaa");
+}
+
+draw();
+</script>
+</body>
+</html>
