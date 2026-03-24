@@ -1,0 +1,1627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Philadelphia Budget Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--gold:#9a6e00;--gold2:#b07d00;--gold-dim:rgba(154,110,0,0.1);--red2:#c0392b;--red-dim:rgba(185,43,26,0.08);--green2:#1e7e40;--green-dim:rgba(21,90,46,0.08);--amber-dim:rgba(138,88,0,0.08);--blue2:#1a6fa8;--blue-dim:rgba(26,79,122,0.08);--text:#1a2530;--text-dim:#4a6070;--text-mute:#8a9aaa;--border:rgba(0,0,0,0.09);}
+*{box-sizing:border-box;margin:0;padding:0;min-width:0;}
+body{background:#f5f7fa;color:var(--text);font-family:'IBM Plex Sans',sans-serif;font-size:14px;}
+.wrap{max-width:920px;margin:0 auto;}
+.hdr{background:#3d5166;border-bottom:2px solid #b8930a;padding:20px 24px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;}
+.hdr-text{flex:1;}
+.hdr h1{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;color:#fff;}
+.hdr h1 span{color:#e8a820;}
+.hdr p{font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(255,255,255,0.6);margin-top:5px;letter-spacing:.8px;text-transform:uppercase;}
+.hdr-logo{flex-shrink:0;}
+.banner{background:#fffbf0;border-left:4px solid #b07d00;padding:14px 20px;border-bottom:1px solid rgba(0,0,0,0.08);font-size:12px;color:var(--text-dim);line-height:1.6;}
+.banner strong{color:var(--gold2);}
+.lbl-row{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+.lbl-act{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--green2);background:var(--green-dim);border:1px solid var(--green2);padding:2px 7px;border-radius:2px;white-space:nowrap;}
+.lbl-prj{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--text-dim);background:rgba(0,0,0,0.04);border:1px solid rgba(0,0,0,0.12);padding:2px 6px;border-radius:2px;white-space:nowrap;}
+.kpi{padding:16px 24px;background:#fff;border-bottom:1px solid rgba(0,0,0,0.1);}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.kpi-box{border-radius:6px;padding:16px 18px;}
+.kpi-box.dark{background:#3d5166;}
+.kpi-box.darker{background:#1b2a3b;border:2px dashed rgba(26,111,168,0.5);}
+.kpi-label{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;}
+.kpi-nums{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+.kpi-num{font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;line-height:1;}
+.kpi-sublabel{font-size:11px;font-weight:600;color:rgba(255,255,255,0.85);margin-top:3px;}
+.five-hdr{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--text-dim);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.five{display:grid;grid-template-columns:repeat(5,1fr);border:1px solid rgba(0,0,0,0.09);border-radius:8px;overflow:hidden;}
+.fc{padding:16px;border-right:1px solid rgba(0,0,0,0.07);position:relative;background:#fff;}
+.fc:last-child{border-right:none;}
+.fc .bar{position:absolute;top:0;left:0;right:0;height:3px;}
+.fc .icon{font-size:20px;margin-bottom:6px;}
+.fc .ftag{font-family:'IBM Plex Mono',monospace;font-size:8px;text-transform:uppercase;letter-spacing:.7px;margin-bottom:6px;line-height:1.4;}
+.fc .num{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;line-height:1;margin-bottom:4px;}
+.fc .sub{font-family:'IBM Plex Mono',monospace;font-size:8px;color:#8a9aaa;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid rgba(0,0,0,0.06);}
+.fc .desc{font-size:10px;color:#4a6070;line-height:1.5;}
+.tabs-wrap{background:#fff;border-bottom:2px solid rgba(0,0,0,0.08);}
+.tabs-hint{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-mute);padding:7px 18px 0;display:flex;align-items:center;gap:6px;}
+.pulse{display:inline-block;width:6px;height:6px;background:var(--gold2);border-radius:50%;animation:pls 2s ease-in-out infinite;}
+@keyframes pls{0%,100%{opacity:1;}50%{opacity:.3;}}
+.tabs{padding:0 12px;display:flex;overflow-x:auto;}
+.tab{padding:10px 14px;font-size:10px;font-weight:600;color:var(--text-dim);cursor:pointer;border-bottom:3px solid transparent;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap;}
+.tab.active{color:#1a2530;border-bottom-color:var(--gold2);background:rgba(154,110,0,0.05);font-weight:700;}
+.content{padding:20px 24px;overflow:hidden;}
+.panel{display:none;}
+.panel.active{display:block;}
+.col{display:flex;flex-direction:column;gap:16px;margin-bottom:16px;}
+.card{background:#fff;border:1px solid rgba(0,0,0,0.09);border-radius:5px;padding:20px;box-shadow:0 1px 5px rgba(0,0,0,0.05);overflow:hidden;}
+.card-t{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--gold2);margin-bottom:8px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.btag{display:inline-flex;align-items:center;font-family:'IBM Plex Mono',monospace;font-size:10px;background:var(--gold-dim);border:1px solid var(--gold);color:var(--gold2);padding:3px 9px;border-radius:2px;margin-bottom:10px;text-transform:uppercase;letter-spacing:.6px;}
+.def-box{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.def-card{flex:1;min-width:180px;border-radius:6px;padding:10px 14px;border-width:1px;border-style:solid;}
+.def-card.blue{background:#e8f1fb;border-color:#a8c8e8;}
+.def-card.red{background:#fdecea;border-color:#f0b0a8;}
+.def-card.green{background:#e6f5ec;border-color:#9ecfb0;}
+.def-card.gold{background:#fef8e7;border-color:#e8c96a;}
+.def-lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px;}
+.def-card.blue .def-lbl{color:#1a5f96;}
+.def-card.red .def-lbl{color:#a93226;}
+.def-card.green .def-lbl{color:#1a6b35;}
+.def-card.gold .def-lbl{color:#9a7000;}
+.def-txt{font-size:11px;color:#4a6070;line-height:1.6;}
+.def-txt strong{color:#1a2530;}
+.htr{background:#f0f4f8;border:1px solid rgba(26,79,122,0.15);border-left:3px solid var(--blue2);border-radius:0 4px 4px 0;padding:9px 12px;margin-bottom:12px;font-size:11px;color:var(--text-dim);line-height:1.55;}
+.htr strong{color:var(--text);}
+.ch{position:relative;height:320px;}
+.ch.lg{height:360px;}
+.ch.xl{height:400px;}
+.ch.tall{height:440px;}
+.ch.xxl{height:480px;}
+.interp{margin-top:14px;background:#f8f9fb;border-radius:0 4px 4px 0;padding:14px 16px;border-left:3px solid rgba(0,0,0,0.12);}
+.interp.amber{border-left-color:var(--gold2);}
+.interp.red{border-left-color:var(--red2);}
+.interp.green{border-left-color:var(--green2);}
+.interp.blue{border-left-color:var(--blue2);}
+.interp-h{font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:7px;}
+.interp-b{font-size:12px;color:var(--text-dim);line-height:1.7;}
+.interp-b strong{color:var(--text);}
+.pill{font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:1px 6px;border-radius:2px;margin-right:6px;display:inline-block;margin-bottom:2px;}
+.pill.blue{background:rgba(26,111,168,0.1);color:var(--blue2);}
+.pill.gold{background:rgba(154,110,0,0.1);color:var(--gold2);}
+.pill.green{background:rgba(21,90,46,0.1);color:var(--green2);}
+table{width:100%;border-collapse:collapse;}
+th{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.6px;color:var(--text-dim);padding:8px 10px;border-bottom:1px solid var(--border);text-align:left;}
+th.r,td.r{text-align:right;}
+td{font-family:'IBM Plex Mono',monospace;font-size:11px;padding:8px 10px;border-bottom:1px solid rgba(0,0,0,0.04);}
+td.pos{color:var(--green2);}td.neg{color:var(--red2);}td.hi{color:var(--gold2);font-weight:600;}td.warn{color:var(--gold2);}
+.tag{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;padding:2px 6px;border-radius:2px;}
+.tag.g{background:var(--green-dim);color:var(--green2);}
+.tag.r{background:var(--red-dim);color:var(--red2);}
+.tag.a{background:var(--amber-dim);color:var(--gold2);}
+.tag.b{background:var(--blue-dim);color:var(--blue2);}
+.callout{padding:14px 16px;border-radius:4px;margin-bottom:16px;border-left:3px solid;}
+.callout.w{background:#fdf8ed;border-color:var(--gold2);}
+.callout.g{background:#eef8f2;border-color:var(--green2);}
+.callout-h{font-size:12px;font-weight:600;margin-bottom:5px;color:var(--gold2);}
+.callout-h.g{color:var(--green2);}
+.callout-b{font-size:12px;color:var(--text-dim);line-height:1.6;}
+.ovx{overflow-x:auto;}
+.note{font-size:10px;color:var(--text-mute);margin-top:8px;font-style:italic;line-height:1.5;}
+.mb16{margin-bottom:16px;}
+.stat-row{display:grid;grid-template-columns:160px 1fr;gap:20px;align-items:start;margin-bottom:12px;}
+.stat-box{text-align:center;background:var(--red-dim);border:1px solid var(--red2);border-radius:5px;padding:14px 12px;}
+.stat-box .lbl{font-family:'IBM Plex Mono',monospace;font-size:9px;color:var(--red2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px;}
+.stat-box .val{font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;color:var(--red2);}
+.stat-box .pct{font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:700;color:var(--red2);margin-top:6px;background:rgba(192,57,43,0.12);padding:3px 8px;border-radius:2px;display:inline-block;}
+.gl-section{margin-bottom:24px;}
+.gl-heading{font-family:'Playfair Display',serif;font-size:15px;font-weight:700;color:var(--gold2);margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid var(--gold-dim);}
+.gl-grid{display:flex;flex-direction:column;gap:10px;}
+.gl-item{background:#fff;border:1px solid var(--border);border-radius:5px;padding:14px 16px;border-left:3px solid var(--blue2);}
+.gl-item.red{border-left-color:var(--red2);}
+.gl-item.green{border-left-color:var(--green2);}
+.gl-item.gold{border-left-color:var(--gold2);}
+.gl-item.grey{border-left-color:#7f8c8d;}
+.gl-term{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--text);margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.gl-def{font-size:12px;color:var(--text-dim);line-height:1.7;}
+.gl-eg{margin-top:6px;font-size:11px;color:var(--text-mute);font-style:italic;padding:5px 10px;background:#f5f7fa;border-radius:3px;line-height:1.5;}
+/* ---- OVERVIEW TAB STYLES ---- */
+.ov-lead{background:linear-gradient(135deg,#1b2a3b 0%,#2d4159 100%);border-radius:8px;padding:22px 24px;margin-bottom:20px;border:1px solid rgba(232,168,32,0.2);}
+.ov-lead-h{font-family:'Playfair Display',serif;font-size:18px;font-weight:900;color:#fff;line-height:1.3;margin-bottom:10px;}
+.ov-lead-h span{color:#e8a820;}
+.ov-lead-b{font-size:12px;color:rgba(255,255,255,0.65);line-height:1.75;max-width:760px;}
+.ov-section-h{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:1.2px;color:var(--text-mute);margin-bottom:14px;padding-bottom:8px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:8px;}
+.ov-section-h span{background:var(--gold-dim);color:var(--gold2);border:1px solid var(--gold);padding:2px 8px;border-radius:2px;font-size:9px;}
+.qol-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+.qol-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:18px 16px;position:relative;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+.qol-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;}
+.qol-card.green::before{background:linear-gradient(90deg,#1e7e40,#27ae60);}
+.qol-card.amber::before{background:linear-gradient(90deg,#9a6e00,#e8a820);}
+.qol-card.blue::before{background:linear-gradient(90deg,#1a4f8a,#1a6fa8);}
+.qol-icon{font-size:22px;margin-bottom:8px;display:block;}
+.qol-label{font-family:'IBM Plex Mono',monospace;font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--text-mute);margin-bottom:6px;}
+.qol-num{font-family:'Playfair Display',serif;font-size:36px;font-weight:900;line-height:1;margin-bottom:6px;}
+.qol-card.green .qol-num{color:#1e7e40;}
+.qol-card.amber .qol-num{color:#b07d00;}
+.qol-card.blue .qol-num{color:#1a6fa8;}
+.qol-badge{display:inline-block;font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;padding:2px 8px;border-radius:2px;margin-bottom:8px;}
+.qol-card.green .qol-badge{background:var(--green-dim);color:var(--green2);border:1px solid var(--green2);}
+.qol-card.amber .qol-badge{background:var(--gold-dim);color:var(--gold2);border:1px solid var(--gold);}
+.qol-card.blue .qol-badge{background:var(--blue-dim);color:var(--blue2);border:1px solid var(--blue2);}
+.qol-delta{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;margin-bottom:6px;}
+.qol-delta.up{color:var(--green2);}
+.qol-delta.dn{color:var(--red2);}
+.qol-delta.good-dn{color:var(--green2);}
+.qol-arrow{font-size:14px;line-height:1;}
+.qol-desc{font-size:11px;color:var(--text-dim);line-height:1.55;}
+.qol-wide{grid-column:span 2;}
+.qol-ch{position:relative;height:100px;margin-top:10px;}
+.init-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px;}
+.init-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:16px 18px;display:flex;gap:14px;align-items:flex-start;box-shadow:0 1px 4px rgba(0,0,0,0.05);}
+.init-icon-wrap{flex-shrink:0;width:44px;height:44px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:22px;}
+.init-icon-wrap.blue{background:rgba(26,111,168,0.1);}
+.init-icon-wrap.green{background:rgba(30,126,64,0.1);}
+.init-icon-wrap.gold{background:rgba(154,110,0,0.1);}
+.init-icon-wrap.purple{background:rgba(142,68,173,0.1);}
+.init-icon-wrap.teal{background:rgba(22,160,133,0.1);}
+.init-body{flex:1;min-width:0;}
+.init-name{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:600;color:var(--text);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px;}
+.init-amt{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;line-height:1;margin-bottom:4px;}
+.init-card .blue .init-amt,.init-amt.blue{color:#1a6fa8;}
+.init-amt.green{color:#1e7e40;}
+.init-amt.gold{color:#b07d00;}
+.init-amt.purple{color:#7d3c98;}
+.init-amt.teal{color:#117864;}
+.init-goal{font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:600;margin-bottom:5px;}
+.init-desc{font-size:11px;color:var(--text-dim);line-height:1.55;}
+.ov-context{background:#f0f4f8;border-radius:6px;padding:16px 18px;border-left:3px solid var(--blue2);margin-top:8px;}
+.ov-context-h{font-size:12px;font-weight:600;color:var(--blue2);margin-bottom:6px;}
+.ov-context-b{font-size:12px;color:var(--text-dim);line-height:1.7;}
+/* responsive QoL grid */
+@media(max-width:640px){.qol-grid{grid-template-columns:1fr 1fr;}.qol-wide{grid-column:span 2;}.init-grid{grid-template-columns:1fr;}}
+.footer{background:#3d5166;margin-top:32px;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.footer-l .n{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#e8a820;font-weight:600;}
+.footer-l .s{font-size:10px;color:rgba(255,255,255,0.55);margin-top:2px;}
+.footer-r{font-family:'IBM Plex Mono',monospace;font-size:9px;color:rgba(255,255,255,0.45);text-align:right;line-height:1.6;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="hdr">
+  <div class="hdr-text">
+    <h1>City of <span>Philadelphia</span> — Budget Analysis Dashboard</h1>
+    <p>Source: FY2027-31 Five Year Financial Plan (Mar 2026) · General Fund · Amounts in $M unless noted</p>
+  </div>
+  <div class="hdr-logo">
+    <img src="data:image/png;base64,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" alt="Economy League of Greater Philadelphia" style="height:44px;display:block;">
+  </div>
+</div>
+
+<div class="banner">
+  <strong>Why FY2022 is the baseline:</strong> First full post-COVID year with verified actuals — the city's "normal" pre-ARP position (fund balance $779M).
+  <div class="lbl-row">
+    <span class="lbl-act">FY2022-FY2025 = VERIFIED ACTUALS</span>
+    <span class="lbl-prj" style="background:rgba(154,110,0,0.1);color:var(--gold2);border-color:var(--gold2);">FY2026 = CURRENT YEAR ESTIMATE</span>
+    <span class="lbl-prj" style="background:rgba(26,82,118,0.15);color:var(--blue2);border-color:var(--blue2);">FY2027 = PROPOSED BUDGET</span>
+    <span class="lbl-prj">FY2028-FY2031 = PROJECTIONS</span>
+  </div>
+</div>
+
+<div class="kpi">
+  <div class="kpi-grid">
+    <div class="kpi-box dark">
+      <div class="kpi-label" style="color:#e8a820;"><span style="background:#e8a820;color:#1b2a3b;padding:1px 7px;border-radius:2px;font-weight:700;">CURRENT YEAR ESTIMATE</span> FY2026</div>
+      <div class="kpi-nums">
+        <div><div class="kpi-num" style="color:#27ae60;">$6.34B</div><div class="kpi-sublabel">Total Revenue</div></div>
+        <div><div class="kpi-num" style="color:#e74c3c;">$6.90B</div><div class="kpi-sublabel">Total Spending</div></div>
+        <div><div class="kpi-num" style="color:#e74c3c;">($382M)</div><div class="kpi-sublabel">Operating Deficit</div></div>
+      </div>
+    </div>
+    <div class="kpi-box darker">
+      <div class="kpi-label" style="color:#5dade2;"><span style="background:rgba(26,111,168,0.3);color:#5dade2;padding:1px 7px;border-radius:2px;font-weight:700;border:1px solid rgba(93,173,226,0.4);">PROPOSED BUDGET</span> FY2027</div>
+      <div class="kpi-nums">
+        <div><div class="kpi-num" style="color:#27ae60;">$6.53B</div><div class="kpi-sublabel">Total Revenue</div></div>
+        <div><div class="kpi-num" style="color:#e74c3c;">$6.97B</div><div class="kpi-sublabel">Total Spending</div></div>
+        <div><div class="kpi-num" style="color:#e74c3c;">($405M)</div><div class="kpi-sublabel">Proposed Deficit</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="five-hdr">Five Numbers That Tell the Deeper Story</div>
+  <div class="five">
+    <div class="fc"><div class="bar" style="background:#1e7e40;"></div><div class="icon">💰</div><div class="ftag" style="color:#1e7e40;">Savings Before Windfall</div><div class="num" style="color:#1e7e40;">$779M</div><div class="sub">FY2022 — Verified Actual</div><div class="desc">Pre-ARP baseline reserve — the starting point for this analysis.</div></div>
+    <div class="fc" style="background:#f9fffc;"><div class="bar" style="background:#27ae60;"></div><div class="icon">📈</div><div class="ftag" style="color:#1e7e40;">All-Time Peak Reserve</div><div class="num" style="color:#1e7e40;">$1,179M</div><div class="sub">FY2025 — Verified Actual</div><div class="desc">Federal COVID relief nearly doubled reserves. One-time money — cannot recur.</div></div>
+    <div class="fc" style="background:#fffaf8;"><div class="bar" style="background:#c0392b;"></div><div class="icon">⚖️</div><div class="ftag" style="color:#c0392b;">FY2026 Deficit Estimate</div><div class="num" style="color:#c0392b;">($382M)</div><div class="sub">FY2026 — Current Estimate</div><div class="desc">Better than $444M adopted budget deficit. Fund balance tracking at <strong style="color:#1a6fa8;">$797M</strong>.</div></div>
+    <div class="fc" style="background:#fffef8;"><div class="bar" style="background:#e67e22;"></div><div class="icon">🔭</div><div class="ftag" style="color:#e67e22;">Where Reserves Land</div><div class="num" style="color:#e67e22;">$46M</div><div class="sub">FY2029 — Projection</div><div class="desc">96% decline from peak. At 0.65% of spending — well below 5% GFOA minimum.</div></div>
+    <div class="fc" style="background:#fffdf4;"><div class="bar" style="background:#b07d00;"></div><div class="icon">👤</div><div class="ftag" style="color:#b07d00;">Staffing Gap (Improved)</div><div class="num" style="color:#b07d00;">17.2%</div><div class="sub">Jun 2025 vacancy rate</div><div class="desc">4,514 of 26,185 positions unfilled. Improved from 20.5% in Jun 2024.</div></div>
+  </div>
+</div>
+
+<div class="tabs-wrap">
+  <div class="tabs-hint"><span class="pulse"></span>Select a section to explore</div>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('overview',this)">Budget Overview</div>
+    <div class="tab" onclick="switchTab('fiscal',this)">Fiscal Health</div>
+    <div class="tab" onclick="switchTab('revenue',this)">Revenue &amp; Tax</div>
+    <div class="tab" onclick="switchTab('expenditure',this)">Expenditure</div>
+    <div class="tab" onclick="switchTab('equity',this)">Equity &amp; Priorities</div>
+    <div class="tab" onclick="switchTab('forecast',this)">Forecast Accuracy</div>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- TAB 0: OVERVIEW -->
+<div class="panel active" id="panel-overview">
+
+  <div class="ov-lead">
+    <div class="ov-lead-h">Philadelphia is <span>turning a corner</span> — but the city's finances face a defining test.</div>
+    <div class="ov-lead-b">Crime is at multi-decade lows. Poverty has dropped below 20% for the first time. The pension is on track. And the FY2027 budget makes bold investments in housing, shelter, and youth. Yet every dollar of progress is funded against a ticking clock: $1.2B in one-time COVID relief is gone by FY2027, reserves will fall from $1.2B to $46M by FY2029, and the structural gap between what the city spends and what it earns has never been wider. This is the story of a city making real gains — and the fiscal reckoning that follows.</div>
+  </div>
+
+  <!-- QUALITY OF LIFE -->
+  <div class="ov-section-h"><span>VERIFIED DATA</span> Quality of Life — Where Philadelphia Stands in 2025</div>
+
+  <div class="qol-grid">
+
+    <!-- Homicides -->
+    <div class="qol-card green">
+      <span class="qol-icon">🔫</span>
+      <div class="qol-label">Homicides — 2025</div>
+      <div class="qol-num">253</div>
+      <div class="qol-badge">60-Year Low</div>
+      <div class="qol-delta good-dn"><span class="qol-arrow">↓</span> Down 37% from 562 in 2021</div>
+      <div class="qol-desc">Philadelphia's deadliest year was 2021, with 562 homicides. Four years of sustained investment in violence intervention, police staffing, and community programs has cut that number by more than a third — the lowest count since the 1960s.</div>
+    </div>
+
+    <!-- Shooting Victims -->
+    <div class="qol-card green">
+      <span class="qol-icon">🩺</span>
+      <div class="qol-label">Non-Fatal Shooting Victims — 2025</div>
+      <div class="qol-num">1,030</div>
+      <div class="qol-badge">Best Since 2015</div>
+      <div class="qol-delta good-dn"><span class="qol-arrow">↓</span> Down 25% year over year</div>
+      <div class="qol-desc">A quarter fewer shooting victims than in 2024 — a reduction of roughly 340 people. The data reflects both enforcement gains and the growing reach of community-based violence interruption programs funded in the FY2026-27 budget.</div>
+    </div>
+
+    <!-- Poverty Rate -->
+    <div class="qol-card green">
+      <span class="qol-icon">📊</span>
+      <div class="qol-label">Poverty Rate — 2024 ACS</div>
+      <div class="qol-num">19.7%</div>
+      <div class="qol-badge">First Time Below 20%</div>
+      <div class="qol-delta good-dn"><span class="qol-arrow">↓</span> Down from 23.3% in 2020</div>
+      <div class="qol-desc">Philadelphia has the highest poverty rate among the 10 largest U.S. cities — but this milestone matters. The drop from 23.3% reflects wage growth, SEPTA access expansion, and sustained human-services investment. The work is far from over.</div>
+    </div>
+
+    <!-- Litter Index — wide card with mini chart -->
+    <div class="qol-card amber qol-wide">
+      <span class="qol-icon">🧹</span>
+      <div class="qol-label">Litter Index Score — 2025 vs 2024</div>
+      <div class="qol-num" style="display:inline;">↓ 11%</div>
+      <div class="qol-badge" style="margin-left:10px;">Year-over-Year Improvement</div>
+      <div class="qol-delta up" style="margin-top:6px;"><span class="qol-arrow">↑</span> 6 new daily pothole crews (1 per district) deploying in FY2027</div>
+      <div class="qol-desc" style="margin-top:6px;">The Litter Index tracks visible litter across Philadelphia's neighborhoods on a 0-4 scale. An 11% citywide improvement represents thousands of block-level assessments. FY2027 adds dedicated pothole and streets crews to sustain momentum — the Streets Dept is among the most understaffed city agencies.</div>
+      <div class="qol-ch"><canvas id="c-litter"></canvas></div>
+    </div>
+
+    <!-- Pension -->
+    <div class="qol-card blue">
+      <span class="qol-icon">🏦</span>
+      <div class="qol-label">Pension Funded Ratio — 2025</div>
+      <div class="qol-num">67.7%</div>
+      <div class="qol-badge">On Track to 80% by 2028</div>
+      <div class="qol-delta up"><span class="qol-arrow">↑</span> Up from 45% in 2015</div>
+      <div class="qol-desc">A decade of disciplined contributions has lifted pension funding from dangerously low (45%) to two-thirds funded (67.7%). The city targets 80% by FY2028 and full funding by FY2033 — a genuinely positive fiscal trajectory inside an otherwise stressed balance sheet.</div>
+    </div>
+
+  </div>
+
+  <!-- KEY INITIATIVES -->
+  <div class="ov-section-h" style="margin-top:4px;"><span>FY2027 PROPOSED BUDGET</span> Five Bold Investments — What This Budget Actually Does</div>
+
+  <div class="init-grid">
+
+    <div class="init-card">
+      <div class="init-icon-wrap" style="background:rgba(26,111,168,0.12);">📈</div>
+      <div class="init-body">
+        <div class="init-name">Economic GPS</div>
+        <div class="init-amt" style="color:#1a6fa8;">$338M</div>
+        <div class="init-goal" style="color:#1a6fa8;">Growth, Prosperity, and Security · Five-Year Operating &amp; Capital Commitment</div>
+        <div class="init-desc">The city's umbrella economic mobility strategy, combining workforce access, youth career pathways, financial empowerment, small business support, and corridor investment. Rather than a single program, Economic GPS is the framework tying together Philadelphia's broader push to connect residents and neighborhoods to opportunity — including Jumpstart Small Business, Philly Biz Hub, PHL TCB, PHL PRIME, and the new Office of Financial Empowerment. The plan sets a target of serving more than 21,000 businesses annually.</div>
+      </div>
+    </div>
+
+    <div class="init-card">
+      <div class="init-icon-wrap blue">🏠</div>
+      <div class="init-body">
+        <div class="init-name">H.O.M.E. Initiative</div>
+        <div class="init-amt blue">$800M</div>
+        <div class="init-goal" style="color:#1a6fa8;">Borrowing · Goal: 30,000 housing units</div>
+        <div class="init-desc">Philadelphia's largest housing intervention in a generation. The Housing, Opportunities, Mobility, and Equity initiative uses $800M in bond financing to acquire land, rehabilitate vacant properties, and build or preserve 30,000 units over five years. Directly targets the city's affordability crisis — the median rent has risen 35% since 2019 while wages have grown 18%.</div>
+      </div>
+    </div>
+
+    <div class="init-card">
+      <div class="init-icon-wrap purple">🧠</div>
+      <div class="init-body">
+        <div class="init-name">Wellness Ecosystem</div>
+        <div class="init-amt purple">$211M</div>
+        <div class="init-goal" style="color:#7d3c98;">Annual Operating Commitment</div>
+        <div class="init-desc">A $211M integrated operating commitment spanning mental health services, substance use treatment, community health workers, and crisis response. Framed as the upstream investment behind the city's public safety gains — addressing root causes of violence, overdose, and homelessness with a coordinated city-wide infrastructure rather than siloed department budgets.</div>
+      </div>
+    </div>
+
+    <div class="init-card">
+      <div class="init-icon-wrap teal">🛏️</div>
+      <div class="init-body">
+        <div class="init-name">New Shelter Capacity</div>
+        <div class="init-amt teal">$110M</div>
+        <div class="init-goal" style="color:#117864;">Over 5 Years · 1,000 New Shelter Beds</div>
+        <div class="init-desc">Philadelphia had one of the highest per-capita rates of unsheltered homelessness in the Northeast. This investment adds 1,000 new shelter beds — a 40%+ increase in capacity — while the Office of Homeless Services budget holds at $85M annually. Paired with the H.O.M.E. initiative's housing stock goals.</div>
+      </div>
+    </div>
+
+    <div class="init-card">
+      <div class="init-icon-wrap green">🎓</div>
+      <div class="init-body">
+        <div class="init-name">Career Connected Learning</div>
+        <div class="init-amt green">1,000</div>
+        <div class="init-goal" style="color:#1e7e40;">New Youth Slots · Workforce Pipeline</div>
+        <div class="init-desc">Philadelphia's youth unemployment rate is nearly double the national average. Career Connected Learning places 1,000 additional young Philadelphians into paid internships, apprenticeships, and work-based learning programs — partnered with businesses, nonprofits, and city agencies. The program ties directly to the SEPTA subsidy (up 48% since FY2022) that makes these opportunities accessible to youth across all 400+ square miles of the city.</div>
+      </div>
+    </div>
+
+    <div class="init-card">
+      <div class="init-icon-wrap gold">🚧</div>
+      <div class="init-body">
+        <div class="init-name">Pothole &amp; Streets Crews</div>
+        <div class="init-amt gold">6 New</div>
+        <div class="init-goal" style="color:#b07d00;">Daily Crews · One Per Council District</div>
+        <div class="init-desc">The Streets Department has a 28% vacancy rate — among the worst in city government. FY2027 adds 6 daily pothole crews, one dedicated to each of the city's six council districts, ensuring equitable geographic coverage. Combined with the 11% litter index improvement, this signals a renewed focus on basic city services as a quality-of-life priority.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ov-context">
+    <div class="ov-context-h">The Underlying Tension: Real Progress, Real Fiscal Pressure</div>
+    <div class="ov-context-b">Every initiative above is funded against a narrowing window. The city's reserve cushion — which stood at $1,179M after COVID relief — is projected to fall to just $46M by FY2029. The FY2027 deficit is $405M, covered by drawing down those reserves. <strong>The question this budget raises but does not fully answer:</strong> what happens to these investments when the savings run out? Explore the Fiscal Health, Revenue, and Forecast tabs for the full picture.</div>
+  </div>
+
+</div>
+
+<!-- TAB 1: FISCAL HEALTH -->
+<div class="panel" id="panel-fiscal">
+  <div class="col">
+    <div class="card">
+      <div class="card-t">Revenue vs. Obligations: FY2022 to FY2031</div>
+      <div class="btag">Baseline: FY2022 — first full post-COVID year</div>
+      <div class="def-box">
+        <div class="def-card blue">
+          <div class="def-lbl">Revenue</div>
+          <div class="def-txt">All money flowing <strong>into</strong> the city — taxes, fees, grants, and transfers from other funds.</div>
+        </div>
+        <div class="def-card red">
+          <div class="def-lbl">Obligations</div>
+          <div class="def-txt">All money flowing <strong>out</strong> — salaries, contracts, debt payments, and benefits. When obligations exceed revenue, the city runs a deficit.</div>
+        </div>
+        <div class="def-card gold" style="flex-basis:100%;">
+          <div class="def-lbl">Operating Surplus / Deficit</div>
+          <div class="def-txt"><strong>Surplus</strong> = revenue exceeded spending, adding to savings. <strong>Deficit</strong> = spending exceeded revenue, drawing down savings. Philadelphia plans deficits in FY2026-FY2029 as one-time ARP money runs out — covered by reserves built up during COVID relief years.</div>
+        </div>
+      </div>
+      <div class="htr"><strong>How to read:</strong> <strong style="color:#27ae60;">Green line</strong> = money coming in. <strong style="color:#e74c3c;">Red line</strong> = money going out. When red is above green, the city runs a deficit. Hover for exact figures.</div>
+      <div class="ch tall"><canvas id="c-revob"></canvas></div>
+      <div class="interp red">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Revenue exceeded obligations through FY2023. From FY2024, spending outpaces revenue, narrowing toward balance by FY2030-31.<br><br><span class="pill gold">Context</span>The FY2026 gap reflects expiry of ARP transfers ($419M in FY2025, now exhausted) and growth in benefits and contracted services.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">Fund Balance Trajectory: FY2022 to FY2031</div>
+      <div class="btag">Baseline: FY2022 actual $779M</div>
+      <div class="def-box">
+        <div class="def-card blue">
+          <div class="def-lbl">Fund Balance</div>
+          <div class="def-txt">The city's savings account — money built up from years where revenues exceeded spending. A higher fund balance means more financial cushion. The GFOA national minimum is <strong>5%</strong> of annual spending; Philadelphia's own target is <strong>8%</strong>.</div>
+        </div>
+      </div>
+      <div class="htr"><strong>How to read:</strong> Each dot = the city's total reserve savings at year-end. Colour signals health: <strong style="color:#27ae60;">green</strong> = above 8%, <strong style="color:#e8a820;">gold</strong> = 5-8% caution, <strong style="color:#e74c3c;">red</strong> = below 5% GFOA minimum. Hover any point for balance and percentage.</div>
+      <div class="ch xl"><canvas id="c-fundbal"></canvas></div>
+      <div class="interp amber">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Fund balance grew from <strong>$779M (FY2022)</strong> to <strong>$1,179M (FY2025)</strong>, then falls to <strong>$46M by FY2029</strong>.<br><br><span class="pill gold">Context</span>Growth driven by one-time ARP federal COVID relief. The drawdown reflects planned spending as ARP expires.<br><br><span class="pill green">Implication</span>By FY2029 reserves hit 0.65% of spending — well below GFOA 5% minimum. FY2026 current estimate: $797M — ahead of adopted budget.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col mb16">
+    <div class="card">
+      <div class="card-t">Fund Balance as % of Obligations vs GFOA Standard</div>
+      <div class="btag">Baseline: FY2022 (14.6%)</div>
+      <div class="htr"><strong>How to read:</strong> Each bar = reserves as a share of that year's total spending. <strong style="color:#27ae60;">Green</strong> = above 8%, <strong style="color:#e8c330;">yellow</strong> = 5-8%, <strong style="color:#f39c12;">amber</strong> = 2-5%, <strong style="color:#e74c3c;">red</strong> = under 2%. Dashed lines mark the GFOA 5% floor and 8% city target.</div>
+      <div class="ch tall"><canvas id="c-ratio"></canvas></div>
+      <div class="interp amber">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Ratio peaked at <strong>18.7% in FY2025</strong>. Falls below 5% GFOA minimum from FY2028, reaching 0.65% in FY2029.<br><br><span class="pill gold">Context</span>Philadelphia holds a separate Budget Stabilisation Reserve (~$344M by FY2028) providing additional but restricted coverage.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">Year-by-Year Operating Position — FY2022 to FY2031</div>
+      <div class="ovx">
+        <table>
+          <thead><tr><th>Year</th><th>Status</th><th class="r">Revenue</th><th class="r">Obligations</th><th class="r">Surplus/(Def.)</th><th class="r">Fund Balance</th><th class="r">FB%</th></tr></thead>
+          <tbody>
+            <tr><td class="hi">FY2022</td><td><span class="tag g">ACTUAL</span></td><td class="r">$5,768M</td><td class="r">$5,339M</td><td class="r pos">+$481M</td><td class="r">$779M</td><td class="r pos">14.6%</td></tr>
+            <tr><td>FY2023</td><td><span class="tag g">ACTUAL</span></td><td class="r">$6,047M</td><td class="r">$5,918M</td><td class="r pos">+$202M</td><td class="r">$982M</td><td class="r pos">16.6%</td></tr>
+            <tr><td>FY2024</td><td><span class="tag g">ACTUAL</span></td><td class="r">$6,064M</td><td class="r">$6,135M</td><td class="r warn">($39M)</td><td class="r">$943M</td><td class="r pos">15.4%</td></tr>
+            <tr><td>FY2025</td><td><span class="tag g">ACTUAL</span></td><td class="r">$6,517M</td><td class="r">$6,318M</td><td class="r pos">+$236M</td><td class="r hi">$1,179M</td><td class="r pos">18.7%</td></tr>
+            <tr style="background:rgba(201,146,10,0.06);"><td class="hi">FY2026 Estimate</td><td><span class="tag a">ESTIMATE</span></td><td class="r">$6,339M</td><td class="r">$6,901M</td><td class="r neg">($382M)</td><td class="r" style="color:var(--blue2);">$797M</td><td class="r warn">11.5%</td></tr>
+            <tr><td style="color:var(--blue2);">FY2027 Proposed</td><td><span class="tag b">PROPOSED</span></td><td class="r">$6,526M</td><td class="r">$6,968M</td><td class="r neg">($405M)</td><td class="r">$392M</td><td class="r warn">5.6%</td></tr>
+            <tr><td>FY2028</td><td><span class="tag r">PROJ.</span></td><td class="r">$6,658M</td><td class="r">$6,954M</td><td class="r neg">($258M)</td><td class="r neg">$133M</td><td class="r neg">1.9%</td></tr>
+            <tr><td>FY2029</td><td><span class="tag r">PROJ.</span></td><td class="r">$6,942M</td><td class="r">$7,067M</td><td class="r neg">($87M)</td><td class="r neg">$46M</td><td class="r neg">0.65%</td></tr>
+            <tr><td>FY2030</td><td><span class="tag r">PROJ.</span></td><td class="r">$7,034M</td><td class="r">$7,078M</td><td class="r neg">($4M)</td><td class="r neg">$42M</td><td class="r neg">0.59%</td></tr>
+            <tr><td>FY2031</td><td><span class="tag a">PROJ.</span></td><td class="r">$7,201M</td><td class="r">$7,237M</td><td class="r pos">+$5M</td><td class="r warn">$47M</td><td class="r warn">0.65%</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">FY2025 = verified actual. FY2026 = current year estimate. FY2027 = proposed budget. FY2028-31 = projections. Source: FY2027-31 Five Year Financial Plan.</p>
+    </div>
+  </div>
+  <div class="col mb16">
+    <div class="card">
+      <div class="card-t">Debt Service as % of Revenue: FY2022 to FY2030</div>
+      <div class="btag">GFOA warning threshold at 10%</div>
+      <div class="htr"><strong>How to read:</strong> The line = share of total revenue consumed by debt repayments. <strong style="color:#1a6fa8;">Blue dots</strong> = below 5% (manageable), <strong style="color:#e67e22;">orange</strong> = 5-7% (caution), <strong style="color:#c0392b;">red</strong> = above 7% (scrutiny). Dashed lines mark 7% caution and 10% GFOA warning thresholds.</div>
+      <div class="ch lg"><canvas id="c-debtpct"></canvas></div>
+      <div class="interp blue">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Debt service grew from <strong>3.2% (FY2022)</strong> to <strong>5.7% (FY2026 estimate)</strong>, rising to <strong>6.6% (FY2027)</strong>.<br><br><span class="pill gold">Context</span>Philadelphia remains below the 10% GFOA warning threshold but the trend is consistently upward.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: REVENUE -->
+<div class="panel" id="panel-revenue">
+  <div class="card mb16">
+    <div class="card-t">Where Revenue Comes From: Full Breakdown FY2024 to FY2030</div>
+    <div class="btag">FY2024-25 = Verified Actuals · FY2026 = Adopted Budget · FY2027 = Proposed · FY2028-30 = Projections</div>
+    <div class="def-box">
+      <div class="def-card blue" style="flex-basis:100%;">
+        <div class="def-lbl">Revenue Structure</div>
+        <div class="def-txt">Philadelphia's General Fund revenue has five categories shown here: <strong>All Tax Revenue</strong> (the dominant core — ~67-73% of total; broken out in detail in the Tax Revenue tab below), <strong>PICA Surcharge</strong> (state-mandated wage-tax transfer — highly reliable), <strong>Other Governments</strong> (state grants, federal aid — ~6%), <strong>Non-Tax Local Revenue</strong> (fees, fines, EMS billing, interest — ~6%), and <strong>ARP &amp; Other City Funds</strong> (one-time COVID relief — now exhausted). The shrinking red ARP segment is the "fiscal cliff" driving projected deficits.</div>
+      </div>
+    </div>
+    <div class="htr"><strong>How to read:</strong> Each stacked bar = total General Fund revenue for that year in five colour-coded categories. Taller bar = more revenue. The <strong style="color:#e74c3c;">red ARP segment</strong> nearly vanishes from FY2026 onward — that is the cliff. The gold <em>All Tax Revenue</em> block shows combined tax growth. Hover any segment for the exact amount and share of total.</div>
+    <div class="ch xxl"><canvas id="c-rev-comp"></canvas></div>
+    <div class="interp red">
+      <div class="interp-h">The four stories this chart tells</div>
+      <div class="interp-b">
+        <span class="pill blue">The ARP cliff</span>Other City Funds (red) falls from <strong>$488M (FY2025)</strong> to <strong>$172M (FY2026)</strong> to <strong>$67M (FY2027)</strong> — a $421M collapse as ARP expires.<br><br>
+        <span class="pill gold">Tax growth compensates — partially</span>Combined taxes grow from $4.09B (FY2024) to $4.79B (FY2027) — a $699M gain. That is real growth but still leaves a structural gap after ARP exits.<br><br>
+        <span class="pill green">PICA grows reliably</span>The state-mandated PICA surcharge (light blue) grows from $706M (FY2024) to $861M (FY2029) in lockstep with the wage tax — one of the city's most reliable streams.<br><br>
+        <span class="pill blue">Interest earnings collapse</span>The non-tax category (teal) shrinks partly because City Treasurer interest earnings fall from $101M (FY2024) to $6M (FY2029) as ARP-boosted cash reserves are drawn down.
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="card">
+      <div class="card-t">Tax Revenue by Source: FY2022 to FY2029</div>
+      <div class="btag">Baseline: FY2022 actuals</div>
+      <div class="def-box">
+        <div class="def-card green" style="flex-basis:100%;">
+          <div class="def-lbl">Tax Revenue</div>
+          <div class="def-txt">Philadelphia's largest income source (~70% of total revenue), split into four categories: <strong>Wage and Earnings</strong> (paid by people who work in or live in Philadelphia), <strong>Real Property</strong> (annual tax on buildings and land), <strong>Business / BIRT</strong> (tax on business income and receipts), and <strong>Other Taxes</strong> (sales, beverage, transfer tax, etc.). The red trend line on the right axis shows how much total tax revenue has grown vs. FY2022.</div>
+        </div>
+      </div>
+      <div class="htr"><strong>How to read:</strong> Each stacked bar = total tax revenue broken into four colour-coded sources. The <strong style="color:#c0392b;">red line</strong> (right axis) shows % growth vs the FY2022 baseline. Hover for individual source values.</div>
+      <div class="ch xl"><canvas id="c-taxstack"></canvas></div>
+      <div class="interp green">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Total tax revenue grew from <strong>$4.14B (FY2022)</strong> to <strong>$4.41B (FY2025 actual)</strong>, projected at <strong>$4.79B (FY2027)</strong>.<br><br><span class="pill gold">Context</span>BIRT grew to $708M actual in FY2025. Real Property Transfer Tax remains below its FY2022 peak due to higher interest rates slowing property sales.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">The ARP Revenue Cliff</div>
+      <div class="btag">ARP funds drop to zero from FY2027 onward</div>
+      <div class="def-box">
+        <div class="def-card red" style="flex-basis:100%;">
+          <div class="def-lbl">ARP — American Rescue Plan</div>
+          <div class="def-txt">One-time federal COVID-19 emergency relief funding spread across FY2022-FY2026. <strong>This money cannot recur</strong> — once spent, it is gone forever. The "ARP cliff" is the sharp drop when these funds run out, leaving a $420M+ annual gap that only sustained tax growth can replace.</div>
+        </div>
+      </div>
+      <div class="htr"><strong>How to read:</strong> Each bar = total inter-fund revenue flowing into the General Fund. <strong style="color:#e74c3c;">Red</strong> = ARP COVID relief money. <strong style="color:#2980b9;">Blue</strong> = other inter-fund transfers. The dramatic drop after FY2025 is the ARP cliff.</div>
+      <div class="ch xl"><canvas id="c-arp"></canvas></div>
+      <div class="interp red">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>ARP funds grew from <strong>$250M (FY2022)</strong> to <strong>$419M (FY2025)</strong>, fell to <strong>$87M (FY2026 estimate)</strong> and zero from FY2027.<br><br><span class="pill gold">Implication</span>The $420M+ reduction between FY2025 and FY2027 is the primary driver of projected deficits.</div>
+      </div>
+    </div>
+  </div>
+  <div class="card mb16">
+    <div class="card-t">Key Revenue Lines: FY2024 Actual vs FY2027 Proposed</div>
+    <div class="ovx">
+      <table>
+        <thead><tr><th>Revenue Source</th><th class="r">FY2024 Actual</th><th class="r">FY2025 Actual</th><th class="r">FY2027 Proposed</th><th class="r">FY24 to FY27</th><th>Risk</th></tr></thead>
+        <tbody>
+          <tr><td class="hi">Wage and Earnings Tax</td><td class="r">$1,843M</td><td class="r">$1,995M</td><td class="r">$2,148M</td><td class="r pos">+16.5%</td><td><span class="tag g">LOW</span></td></tr>
+          <tr><td>Real Property Tax</td><td class="r">$838M</td><td class="r">$903M</td><td class="r">$982M</td><td class="r pos">+17.1%</td><td><span class="tag g">LOW</span></td></tr>
+          <tr><td>Business Tax (BIRT)</td><td class="r">$680M</td><td class="r">$708M</td><td class="r">$806M</td><td class="r pos">+18.6%</td><td><span class="tag a">MEDIUM</span></td></tr>
+          <tr><td class="neg">Real Property Transfer Tax</td><td class="r neg">$266M</td><td class="r neg">$332M</td><td class="r neg">$354M</td><td class="r pos">+33.2%</td><td><span class="tag r">HIGH</span></td></tr>
+          <tr><td>PICA Surcharge</td><td class="r">$706M</td><td class="r">$761M</td><td class="r">$797M</td><td class="r pos">+13.0%</td><td><span class="tag g">STABLE</span></td></tr>
+          <tr><td>State Grants (excl. PICA)</td><td class="r">$270M</td><td class="r">$305M</td><td class="r">$340M</td><td class="r pos">+25.9%</td><td><span class="tag g">STABLE</span></td></tr>
+          <tr><td class="neg">Interest Earnings</td><td class="r neg">$101M</td><td class="r neg">$96M</td><td class="r neg">$24M</td><td class="r neg">-76.2%</td><td><span class="tag r">DECLINING</span></td></tr>
+          <tr><td class="neg">ARP and Other City Funds</td><td class="r neg">$455M</td><td class="r neg">$488M</td><td class="r neg">$67M</td><td class="r neg">-85.3%</td><td><span class="tag r">CLIFF</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="interp amber" style="margin-top:12px;">
+      <div class="interp-h">Two risks to watch: Real Property Transfer Tax and interest earnings</div>
+      <div class="interp-b">The Real Property Transfer Tax is budgeted for a 33% increase from FY2024 to FY2027 — the most volatile line in the revenue structure, dependent on real estate transaction volume. Interest earnings are falling rapidly as ARP-boosted cash reserves are drawn down. Together these two lines represent a combined $77M+ of revenue uncertainty in FY2027.</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: EXPENDITURE -->
+<div class="panel" id="panel-expenditure">
+  <div class="callout w">
+    <div class="callout-h">Four reference points: FY2022 · FY2024 · FY2026 estimate · FY2027 proposed</div>
+    <div class="callout-b">This lets you see where spending has been and where it is headed. FY2022 is the pre-ARP baseline; FY2024 is the most recent confirmed actual; FY2026 is the current year estimate; FY2027 is the proposed budget.</div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-t">Spending by Category: FY2022 to FY2027</div>
+      <div class="btag">FY2022 = pre-ARP baseline · FY2027 = proposed budget</div>
+      <div class="htr"><strong>How to read:</strong> Each row is a spending category. Four bars per row — <strong style="color:#2980b9;">blue</strong> = FY2022, <strong style="color:#27ae60;">green</strong> = FY2024, <strong style="color:#b07d00;">gold</strong> = FY2026 estimate, <strong style="color:#a03232;">red</strong> = FY2027 proposed. Longer bar = more spending.</div>
+      <div class="ch xxl"><canvas id="c-expclass"></canvas></div>
+      <div class="interp blue">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Total spending grows from <strong>$5.34B (FY2022)</strong> to <strong>$6.97B (FY2027 proposed)</strong> — a <strong>30.5% increase</strong> in five years.<br><br><span class="pill gold">Context</span>Wages (+30%), Health benefits (+48%), and Contracts (+63%) are fastest-growing. Labor Reserve drops $102M to $39M as more contracts finalize.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">Total Obligations Trend: FY2022 to FY2031</div>
+      <div class="btag">Actual through FY2025 · FY2026 = estimate · FY2027+ = proposed/projected</div>
+      <div class="htr"><strong>How to read:</strong> The <strong style="color:#e74c3c;">red filled area</strong> shows total spending each year. <strong>Grey diamond markers</strong> show what was originally adopted in FY2024 and FY2025 — they sit above the actual red line, illustrating underspending due to unfilled positions.</div>
+      <div class="ch xl"><canvas id="c-obligtrend"></canvas></div>
+      <div class="interp red">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Actual obligations came in <strong>$201M below budget in FY2024</strong> and <strong>$251M below budget in FY2025</strong>.<br><br><span class="pill gold">Context</span>The gap is driven by vacancy rates. As hiring fills positions, this underspend buffer narrows.</div>
+      </div>
+    </div>
+  </div>
+  <div class="col mb16">
+    <div class="card">
+      <div class="card-t">Employee Benefits Deep Dive: FY2022 to FY2030</div>
+      <div class="btag">Health costs up 48% FY2022 to FY2027</div>
+      <div class="htr"><strong>How to read:</strong> Each bar = total employee benefit costs split into: <strong style="color:#1a5276;">dark blue</strong> = pension (incl. POB), <strong style="color:#c0392b;">red</strong> = health and medical insurance, <strong style="color:#7f8c8d;">grey</strong> = FICA and other. Note the FY2029 pension spike (scheduled balloon payment) and steady growth in the red health segment.</div>
+      <div class="ch lg"><canvas id="c-benefits"></canvas></div>
+      <div class="interp amber">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Health/medical insurance grows from $484M (FY2022) to $718M (FY2027 proposed) — a <strong>48% increase in 5 years</strong>.<br><br><span class="pill gold">Context</span>The FY2029 pension balloon payment spike then drops sharply as the bond retires in FY2030.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">Staffing Trajectory: Jun 2020 → 2022 → 2024 → 2025 vs FY2026 &amp; FY2027 Budgets</div>
+      <div class="btag">10 departments · Source: Plans 0–4 (FY2020–FY2027) · ★ Jun 2025 = latest actuals</div>
+      <div class="htr"><strong>How to read:</strong> Each group = one department, 6 bars. <strong>Solid bars</strong> = actual filled headcount (light grey = Jun 2020, mid-grey = Jun 2022, blue = Jun 2024, colour-coded = Jun 2025 ★). <strong>Outlined bars</strong> = authorised budget positions (gold outline = FY2026 adopted, blue outline = FY2027 proposed). Jun 2025 colour: <strong style="color:#27ae60;">green</strong> &lt;10% vacant · <strong style="color:#b8960c;">yellow</strong> 10–19% · <strong style="color:#e67e22;">amber</strong> 20–29% · <strong style="color:#c0392b;">red</strong> ≥30%. Sanitation is a new standalone dept from FY2026 — no prior comparable data. Hover any bar for figures and change vs Jun 2025.</div>
+      <div class="ch xxl"><canvas id="c-vacancy"></canvas></div>
+      <div class="interp red">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b">
+          <span class="pill blue">Police — five years of worsening</span>From 7,175 filled (Jun 2020, 1.8% vacancy) to just 6,118 (Jun 2025, 19.8%). The budget grew by 321 authorised positions while actual headcount fell by 1,057. A pipeline and attrition problem, not a budget one.<br><br>
+          <span class="pill green">Fire — the only consistent success</span>Uninterrupted year-on-year improvement across all five data points: 22.0% → 15.9% vacancy with a stable 3,392 budget throughout. The model for what successful city hiring looks like.<br><br>
+          <span class="pill blue">Prisons — collapse and partial recovery</span>9.7% vacancy (Jun 2020) fell to 42.1% (Jun 2024) before recovering to 29.1% (Jun 2025, +283 positions in a single year). FY2027 raises the authorised ceiling to 2,321 — still more hiring required.<br><br>
+          <span class="pill gold">Free Library — budget shock created instant vacancy</span>An authorised headcount jump from 715 to 961 (FY2023) created apparent 35.7% vacancy overnight. Filled positions have grown steadily (618 → 858) but the headline gap persists because the budget target was raised sharply without a matching hiring surge.<br><br>
+          <span class="pill gold">The paradox</span>As vacancies close, services improve — but the salary underspend cushion ($201M below budget FY2024, $251M FY2025) that inflated fund balances quietly disappears.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 4: EQUITY -->
+<div class="panel" id="panel-equity">
+  <div class="callout w">
+    <div class="callout-h">Philadelphia has a 19.7% poverty rate — highest among the 10 largest U.S. cities</div>
+    <div class="callout-b">Equity analysis compares FY2022 (Kenney administration baseline) against FY2027 (Parker administration proposed budget).</div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-t">Where the Money Goes: FY2027 Proposed Budget ($6.97B Total)</div>
+      <div class="htr"><strong>How to read:</strong> Each horizontal bar = one budget line, ranked largest to smallest. Longer bar = larger share of the $6.97B total. Hover any bar for the exact dollar amount and percentage of total budget.</div>
+      <div class="ch xl"><canvas id="c-priority"></canvas></div>
+      <div class="interp blue">
+        <div class="interp-h">What this shows</div>
+        <div class="interp-b"><span class="pill blue">Key figures</span>Employee benefits (26.1%) and Police (13.4%) are the two largest lines. Combined public safety = <strong>$1.71B — 24.6% of total</strong>.<br><br><span class="pill gold">Context</span>Human-services spending = <strong>$478M — 6.9%</strong> — a ratio of 3.6:1 public safety to human services. Commerce Economic Stimulus is $90M in FY2027, down from $101M in FY2026, directed toward the administration's Economic GPS framework including Jumpstart Small Business, Philly Biz Hub, and neighborhood commercial corridor investment.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">Public Safety vs Human Services: FY2022 to FY2031</div>
+      <div class="btag">Baseline: FY2022 — Kenney administration ratio</div>
+      <div class="htr"><strong>How to read:</strong> Three lines track spending over time. <strong style="color:#e74c3c;">Red</strong> = Police + Fire + Prisons combined. <strong style="color:#27ae60;">Green</strong> = Human Services + Public Health + Homelessness. <strong style="color:#2980b9;">Blue dashed</strong> = School District contribution. A widening gap between red and green means public safety is growing faster in dollar terms.</div>
+      <div class="ch lg"><canvas id="c-equity"></canvas></div>
+      <div class="interp amber">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Public safety grows from <strong>$1.37B (FY2022)</strong> to <strong>$1.71B (FY2027 proposed)</strong>, +25%. Human services grew from <strong>$436M to $511M</strong>, +17%.<br><br><span class="pill gold">Context</span>In absolute dollars, public safety received ~$340M more growth than human services since FY2022.</div>
+      </div>
+    </div>
+  </div>
+  <div class="card mb16" style="border-left:4px solid var(--gold2);background:linear-gradient(135deg,#fdf8ed,#fffdf8);">
+    <div class="card-t" style="color:var(--gold2);">Commerce Economic Stimulus — 17x Growth Since FY2022</div>
+    <div class="stat-row">
+      <div class="stat-box" style="background:var(--amber-dim);border-color:var(--gold2);">
+        <div class="lbl" style="color:var(--gold2);">FY2022 Actual</div><div class="val" style="color:var(--gold2);">$6M</div>
+        <div style="font-size:18px;color:var(--text-dim);margin:4px 0;">to</div>
+        <div class="lbl" style="color:var(--gold2);">FY2026 Estimate</div><div class="val" style="color:var(--gold2);">$101M</div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;margin:4px 0;color:var(--text-dim);">FY2027 Proposed:</div>
+        <div class="val" style="color:var(--gold2);">$90M</div>
+        <div class="pct" style="background:rgba(154,110,0,0.12);color:var(--gold2);">+1,400% vs FY2022</div>
+      </div>
+      <div>
+        <p style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:6px;">What the plan says — and what it doesn't</p>
+        <p style="font-size:12px;color:var(--text-dim);line-height:1.6;margin-bottom:10px;">Under Mayor Kenney (FY2022) this line was $6M. Under Mayor Parker it reached <strong>$101M in FY2026</strong>, stepping down to <strong>$90M in FY2027</strong>. The FY2027-31 Plan does provide strategic direction: the administration's <strong>Economic GPS framework</strong> frames a broader economic opportunity agenda totalling <strong>$107M in operating investments and $231M in capital funding</strong> over the six-year program. Named initiatives include <strong>Jumpstart Small Business</strong>, <strong>Philly Biz Hub</strong>, <strong>PHL TCB</strong>, and <strong>PHL PRIME</strong>. The plan sets a target of serving an additional <strong>8,700 businesses annually</strong> — more than 21,000 businesses served per year in total. Commerce is directed to provide direct capital and incentives, help businesses open and grow, attract and retain firms, and invest in neighborhood commercial corridors. For context, the entire Housing Trust Fund General Fund contribution in FY2027 is $34M.</p>
+        <div style="background:#fdf8ed;border:1px solid rgba(154,110,0,0.3);border-radius:4px;padding:10px 12px;"><span style="font-size:11px;color:var(--gold2);font-weight:600;">What remains unclear: </span><span style="font-size:11px;color:var(--text-dim);">The plan provides strategic direction and examples of use, but does not fully itemize how the full Economic Stimulus pool is allocated across subprograms, or define eligibility criteria and outcome targets for each dollar. The gap between the scale of investment ($90M) and the precision of public accountability reporting is worth watching.</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="card mb16">
+    <div class="card-t">Key Equity-Relevant Spending Lines: FY2022 to FY2027</div>
+    <div class="ovx">
+      <table>
+        <thead><tr><th>Program</th><th class="r">FY2022 Actual</th><th class="r">FY2025 Actual</th><th class="r">FY2027 Proposed</th><th class="r">FY22 to FY27</th><th>Signal</th></tr></thead>
+        <tbody>
+          <tr><td>SEPTA Subsidy</td><td class="r">$91M</td><td class="r">$133M</td><td class="r">$135M</td><td class="r pos">+48.4%</td><td><span class="tag g">STRONG+</span></td></tr>
+          <tr><td>Free Library System</td><td class="r">$42M</td><td class="r">$68M</td><td class="r">$78M</td><td class="r pos">+85.7%</td><td><span class="tag g">STRONG+</span></td></tr>
+          <tr><td>Office of Homeless Services</td><td class="r">$55M</td><td class="r">$85M</td><td class="r">$85M</td><td class="r pos">+54.5%</td><td><span class="tag g">STRONG+</span></td></tr>
+          <tr><td>Human Services (DHS)</td><td class="r">$173M</td><td class="r">$211M</td><td class="r">$235M</td><td class="r pos">+35.8%</td><td><span class="tag g">POSITIVE</span></td></tr>
+          <tr><td>Public Health</td><td class="r">$154M</td><td class="r">$157M</td><td class="r">$158M</td><td class="r pos">+2.6%</td><td><span class="tag a">FLAT</span></td></tr>
+          <tr><td>Housing Trust Fund</td><td class="r">$29M</td><td class="r">$31M</td><td class="r">$34M</td><td class="r pos">+17.2%</td><td><span class="tag a">MODEST+</span></td></tr>
+          <tr><td>School District Contribution</td><td class="r">$256M</td><td class="r">$284M</td><td class="r">$284M</td><td class="r pos">+10.9%</td><td><span class="tag a">FLAT REAL</span></td></tr>
+          <tr><td>Community College Subsidy</td><td class="r">$48M</td><td class="r">$56M</td><td class="r">$56M</td><td class="r pos">+16.7%</td><td><span class="tag g">RECOVERED</span></td></tr>
+          <tr><td>Commerce Economic Stimulus</td><td class="r">$6M</td><td class="r">$35M</td><td class="r">$90M</td><td class="r warn">+1,400%</td><td><span class="tag a">WATCH</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 5: FORECAST -->
+<div class="panel" id="panel-forecast">
+  <div class="callout g">
+    <div class="callout-h g">Why Forecast Accuracy Matters</div>
+    <div class="callout-b">Each year the city adopts a new Five-Year Plan revising prior projections. The key finding: Philadelphia consistently overestimates spending AND underestimates fund balance — both driven by vacancy rates.</div>
+  </div>
+  <div class="col">
+    <div class="card">
+      <div class="card-t">Fund Balance: Projections vs Actuals</div>
+      <div class="btag">Each bar group = different plan projections for the same year</div>
+      <div class="htr"><strong>How to read:</strong> Two groups of bars. <strong>Left group</strong> = three estimates of FY2024's year-end balance. <strong>Right group</strong> = same for FY2025. <strong style="color:#27ae60;">Green bars</strong> = verified actuals. Taller actual vs projected bars = the city consistently exceeded expectations.</div>
+      <div class="ch xl"><canvas id="c-forecast-fb"></canvas></div>
+      <p class="note">Left group = projections for FY2024 | Right group = projections for FY2025 | Green = verified actual result</p>
+      <div class="interp green">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Every prior projection was substantially below actual. FY2024: Plan 1 projected $529M, Plan 2 projected $628M, actual <strong>$943M (+$315M vs Plan 2)</strong>. FY2025: projected $915M, actual <strong>$1,179M (+$265M)</strong>.<br><br><span class="pill gold">Implication</span>If FY2026 underspending continues, the year-end fund balance will again exceed the plan projection — consistent with the current $797M estimate.</div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-t">Obligations: Budgeted vs Actual Spending</div>
+      <div class="btag">Gap between bars = how much the city underspent each year</div>
+      <div class="htr"><strong>How to read:</strong> Two bars per year. <strong style="color:#e74c3c;">Red outlined bar</strong> = what the adopted budget said the city would spend. <strong style="color:#27ae60;">Green bar</strong> = what was actually spent. When green is shorter than red, the city underspent — mainly because positions were unfilled. Hover for the exact underspend amount.</div>
+      <div class="ch xl"><canvas id="c-forecast-oblig"></canvas></div>
+      <div class="interp amber">
+        <div class="interp-h">What this chart shows</div>
+        <div class="interp-b"><span class="pill blue">Trend</span>Actual obligations fell short of adopted budget every year FY2022 to FY2025. The gap grew to <strong>$251M in FY2025</strong>.<br><br><span class="pill gold">Context</span>Primary driver is the citywide vacancy rate. As hiring improves, this underspend buffer narrows.</div>
+      </div>
+    </div>
+  </div>
+  <div class="card mb16">
+    <div class="card-t">Cross-Plan Comparison: What Each Plan Projected for FY2026</div>
+    <div class="ovx">
+      <table>
+        <thead><tr><th>Metric</th><th class="r">Plan 1 (Jun 2023)</th><th class="r">Plan 2 (Jun 2024)</th><th class="r">Adopted (Jun 2025)</th><th class="r">Current Estimate (Mar 2026)</th><th class="r">Change P1 to now</th></tr></thead>
+        <tbody>
+          <tr><td class="hi">Total Revenue</td><td class="r">$5,935M</td><td class="r">$6,058M</td><td class="r">$6,364M</td><td class="r">$6,339M</td><td class="r pos">+$404M</td></tr>
+          <tr><td class="hi">Total Obligations</td><td class="r">$6,237M</td><td class="r">$6,333M</td><td class="r">$6,843M</td><td class="r">$6,901M</td><td class="r neg">+$664M</td></tr>
+          <tr><td class="neg">Operating Deficit</td><td class="r neg">($273M)</td><td class="r neg">($239M)</td><td class="r neg">($444M)</td><td class="r neg">($382M)</td><td class="r neg">Worsened</td></tr>
+          <tr><td class="hi">Fund Balance</td><td class="r">$234M</td><td class="r">$330M</td><td class="r">$471M</td><td class="r hi">$797M</td><td class="r pos">+$563M</td></tr>
+          <tr><td>Wage Tax</td><td class="r">$1,929M</td><td class="r">$2,001M</td><td class="r">$2,040M</td><td class="r">$2,087M</td><td class="r pos">+$158M</td></tr>
+          <tr><td class="neg">Real Property Transfer Tax</td><td class="r neg">$405M</td><td class="r neg">$315M</td><td class="r neg">$373M</td><td class="r neg">$334M</td><td class="r neg">-$71M</td></tr>
+          <tr><td>Purchase of Services</td><td class="r">$1,252M</td><td class="r">$1,345M</td><td class="r">$1,608M</td><td class="r">$1,578M</td><td class="r neg">+$326M</td></tr>
+          <tr><td>Debt Service</td><td class="r">$381M</td><td class="r">$362M</td><td class="r">$405M</td><td class="r">$362M</td><td class="r">-$19M</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="interp amber" style="margin-top:12px;">
+      <div class="interp-h">Revenues improved but obligations grew faster</div>
+      <div class="interp-b">Revenue estimates improved by <strong>+$404M</strong> from Plan 1 to today. But obligations grew <strong>+$664M</strong> faster. The biggest revision: Purchase of Services contracts <strong>+$326M above Plan 1</strong> — systematically underestimated in every plan.</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .content -->
+
+<div class="footer">
+  <div class="footer-l">
+    <div class="n">Economy League of Greater Philadelphia</div>
+    <div class="s">Independent analysis of Philadelphia's fiscal position</div>
+  </div>
+  <div class="footer-r">
+    Source: City of Philadelphia FY2027-31 Five Year Financial Plan (March 2026)<br>
+    FY2022-FY2025 = Verified Actuals · FY2026 = Current Year Estimate · FY2027 = Proposed Budget · FY2028-31 = Projections
+  </div>
+</div>
+</div><!-- end .wrap -->
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function() {
+'use strict';
+
+window.switchTab = function(name, el) {
+  var tabs = document.querySelectorAll('.tab');
+  var panels = document.querySelectorAll('.panel');
+  for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+  for (var j = 0; j < panels.length; j++) { panels[j].classList.remove('active'); }
+  document.getElementById('panel-' + name).classList.add('active');
+  el.classList.add('active');
+  setTimeout(function() { window.dispatchEvent(new Event('resize')); }, 60);
+};
+
+Chart.defaults.color = '#4a6070';
+Chart.defaults.borderColor = 'rgba(0,0,0,0.08)';
+Chart.defaults.font.size = 10;
+
+var YRS = ['FY22','FY23','FY24','FY25','FY26','FY27','FY28','FY29','FY30','FY31'];
+var REV = [5768,6047,6064,6517,6339,6526,6658,6942,7034,7201];
+var OBL = [5339,5918,6135,6318,6901,6968,6954,7067,7078,7237];
+var FB  = [779,982,943,1179,797,392,133,46,42,47];
+
+var S10 = ['Actual','Actual','Actual','Actual','Estimate','Proposed','Proj.','Proj.','Proj.','Proj.'];
+var S8  = ['Actual','Actual','Actual','Actual','Estimate','Proposed','Proj.','Proj.'];
+var S9  = ['Actual','Actual','Actual','Actual','Estimate','Proposed','Proj.','Proj.','Proj.'];
+
+function tk(s) {
+  return function(v, i) {
+    var l = this.getLabelForValue(v);
+    return s[i] ? [l, s[i]] : [l];
+  };
+}
+function gr(ctx, c1, c2) {
+  var g = ctx.createLinearGradient(0, 0, 0, 400);
+  g.addColorStop(0, c1);
+  g.addColorStop(1, c2);
+  return g;
+}
+var TT = {
+  backgroundColor: '#fff',
+  titleColor: '#1a2530',
+  bodyColor: '#3d5166',
+  borderColor: 'rgba(0,0,0,0.18)',
+  borderWidth: 1
+};
+
+/* ---- FUND BALANCE ---- */
+(function() {
+  var ctx = document.getElementById('c-fundbal').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: YRS,
+      datasets: [{
+        label: 'Fund Balance ($M)',
+        data: FB,
+        borderColor: '#e8a820',
+        backgroundColor: gr(ctx, 'rgba(201,146,10,0.35)', 'rgba(201,146,10,0.02)'),
+        fill: true,
+        tension: 0.35,
+        borderWidth: 2.5,
+        pointBackgroundColor: FB.map(function(v, i) {
+          var r = v / OBL[i] * 100;
+          return r < 5 ? '#e74c3c' : r < 8 ? '#e8a820' : '#27ae60';
+        }),
+        pointRadius: 6
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) { return '$' + c.parsed.y + 'M fund balance'; },
+            afterLabel: function(c) {
+              return (FB[c.dataIndex] / OBL[c.dataIndex] * 100).toFixed(1) + '% of obligations | GFOA min=5%';
+            }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0, callback: tk(S10) } },
+        y: { beginAtZero: true, ticks: { callback: function(v) { return '$' + v + 'M'; } } }
+      }
+    }
+  });
+})();
+
+/* ---- REV vs OBL ---- */
+(function() {
+  var ctx = document.getElementById('c-revob').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: YRS,
+      datasets: [
+        {
+          label: 'Revenue',
+          data: REV,
+          borderColor: '#27ae60',
+          backgroundColor: gr(ctx, 'rgba(26,107,58,0.2)', 'rgba(26,107,58,0)'),
+          fill: true, tension: 0.3, borderWidth: 2, pointRadius: 4
+        },
+        {
+          label: 'Obligations',
+          data: OBL,
+          borderColor: '#e74c3c',
+          backgroundColor: gr(ctx, 'rgba(192,57,43,0.2)', 'rgba(192,57,43,0)'),
+          fill: true, tension: 0.3, borderWidth: 2, pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 12 } },
+        tooltip: TT
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0, callback: tk(S10) } },
+        y: { ticks: { callback: function(v) { return '$' + v + 'M'; } } }
+      }
+    }
+  });
+})();
+
+/* ---- FB RATIO ---- */
+(function() {
+  var ctx = document.getElementById('c-ratio').getContext('2d');
+  var ratios = FB.map(function(b, i) { return parseFloat((b / OBL[i] * 100).toFixed(1)); });
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: YRS,
+      datasets: [
+        {
+          label: 'FB % of Obligations',
+          data: ratios,
+          backgroundColor: ratios.map(function(r) {
+            return r < 2 ? 'rgba(231,76,60,.8)' : r < 5 ? 'rgba(243,156,18,.8)' : r < 8 ? 'rgba(241,196,15,.8)' : 'rgba(39,174,96,.8)';
+          }),
+          borderRadius: 3
+        },
+        {
+          label: 'GFOA Min 5%', data: Array(10).fill(5),
+          type: 'line', borderColor: 'rgba(192,57,43,0.6)',
+          borderDash: [3,3], borderWidth: 1.5, pointRadius: 0, fill: false
+        },
+        {
+          label: 'Target 8%', data: Array(10).fill(8),
+          type: 'line', borderColor: '#e8a820',
+          borderDash: [5,3], borderWidth: 1, pointRadius: 0, fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: TT
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0, callback: tk(S10) } },
+        y: { ticks: { callback: function(v) { return v + '%'; } } }
+      }
+    }
+  });
+})();
+
+/* ---- DEBT SERVICE ---- */
+(function() {
+  var ctx = document.getElementById('c-debtpct').getContext('2d');
+  var yrs9 = ['FY22','FY23','FY24','FY25','FY26','FY27','FY28','FY29','FY30'];
+  var debt = [183,241,294,313,362,431,453,420,512];
+  var rev9 = [5768,6047,6064,6517,6339,6526,6658,6942,7034];
+  var dpct = debt.map(function(d, i) { return parseFloat((d / rev9[i] * 100).toFixed(1)); });
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: yrs9,
+      datasets: [
+        {
+          label: 'Debt Service % of Revenue',
+          data: dpct,
+          borderColor: '#1a6fa8',
+          backgroundColor: gr(ctx, 'rgba(26,79,122,0.25)', 'rgba(26,79,122,0.02)'),
+          fill: true, tension: 0.35, borderWidth: 2.5,
+          pointBackgroundColor: dpct.map(function(p) { return p > 7 ? '#c0392b' : p > 5 ? '#e67e22' : '#1a6fa8'; }),
+          pointRadius: 6
+        },
+        {
+          label: 'GFOA Warning 10%', data: Array(9).fill(10),
+          type: 'line', borderColor: 'rgba(192,57,43,0.5)',
+          borderDash: [4,3], borderWidth: 1.5, pointRadius: 0, fill: false
+        },
+        {
+          label: 'Caution 7%', data: Array(9).fill(7),
+          type: 'line', borderColor: 'rgba(230,126,34,0.4)',
+          borderDash: [3,3], borderWidth: 1, pointRadius: 0, fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: TT
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0, callback: tk(S9) } },
+        y: { min: 0, max: 12, ticks: { callback: function(v) { return v + '%'; } } }
+      }
+    }
+  });
+})();
+
+/* ---- REVENUE COMPOSITION ---- */
+(function() {
+  var ctx = document.getElementById('c-rev-comp').getContext('2d');
+  var rcYrs = ['FY24','FY25','FY26','FY27','FY28','FY29','FY30'];
+  var rcS7 = ['Actual','Actual','Budget','Proposed','Proj.','Proj.','Proj.'];
+  // All tax sources consolidated (Wage + Real Property + BIRT + Other Taxes)
+  var taxrev = [4088, 4413, 4555, 4787, 4929, 5030, 5147];
+  var ntax = [456,466,410,390,438,396,398];
+  var govt = [359,389,456,447,438,440,441];
+  var pica = [706,761,769,797,831,861,890];
+  var arp  = [455,488,172,67,72,68,69];
+  var allDs = [taxrev,ntax,govt,pica,arp];
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: rcYrs,
+      datasets: [
+        { label: 'All Tax Revenue',             data: taxrev, backgroundColor: '#c9920a', stack: 'r' },
+        { label: 'Non-Tax Local Revenue',        data: ntax,   backgroundColor: '#16a085', stack: 'r' },
+        { label: 'Other Govts (State/Federal)',  data: govt,   backgroundColor: '#2c3e50', stack: 'r' },
+        { label: 'PICA Surcharge',               data: pica,   backgroundColor: '#5dade2', stack: 'r' },
+        { label: 'ARP & Other City Funds',       data: arp,    backgroundColor: 'rgba(231,76,60,0.85)', stack: 'r' }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) {
+              var idx = c.dataIndex;
+              var total = allDs.reduce(function(s, d) { return s + (d[idx] || 0); }, 0);
+              return c.dataset.label + ': $' + c.parsed.y.toLocaleString() + 'M (' + (c.parsed.y / total * 100).toFixed(1) + '%)';
+            },
+            afterBody: function(items) {
+              var idx = items[0].dataIndex;
+              var total = allDs.reduce(function(s, d) { return s + (d[idx] || 0); }, 0);
+              return ['Total revenue: $' + total.toLocaleString() + 'M'];
+            }
+          }
+        })
+      },
+      scales: {
+        x: {
+          stacked: true,
+          ticks: { maxRotation: 0, callback: function(v, i) { return [this.getLabelForValue(v), rcS7[i]]; } }
+        },
+        y: {
+          stacked: true,
+          ticks: { callback: function(v) { return '$' + v + 'M'; } },
+          title: { display: true, text: 'Total Revenue ($M)', font: { size: 9 } }
+        }
+      }
+    }
+  });
+})();
+
+/* ---- TAX STACK ---- */
+(function() {
+  var ctx = document.getElementById('c-taxstack').getContext('2d');
+  var wD = [1654,1733,1843,1995,2040,2148,2264,2343];
+  var pD = [701,810,838,903,940,982,1017,1053];
+  var bD = [750,712,680,752,779,806,812,818];
+  var oD = [1034,899,827,763,783,820,852,883];
+  var tots = wD.map(function(w, i) { return w + pD[i] + bD[i] + oD[i]; });
+  var base = tots[0];
+  var pG = tots.map(function(t) { return parseFloat(((t - base) / base * 100).toFixed(1)); });
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['FY22','FY23','FY24','FY25','FY26','FY27','FY28','FY29'],
+      datasets: [
+        { label: 'Wage & Earnings', data: wD, backgroundColor: 'rgba(201,146,10,0.9)', stack: 't', yAxisID: 'y' },
+        { label: 'Real Property',   data: pD, backgroundColor: 'rgba(41,128,185,0.85)',  stack: 't', yAxisID: 'y' },
+        { label: 'Business (BIRT)', data: bD, backgroundColor: 'rgba(39,174,96,0.75)',   stack: 't', yAxisID: 'y' },
+        { label: 'Other Taxes',     data: oD, backgroundColor: 'rgba(127,140,141,0.65)', stack: 't', yAxisID: 'y' },
+        {
+          label: '% growth vs FY2022', data: pG, type: 'line',
+          borderColor: '#c0392b', backgroundColor: 'transparent',
+          borderWidth: 2.5, pointBackgroundColor: '#c0392b', pointRadius: 5,
+          fill: false, yAxisID: 'y2', tension: 0.3
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) {
+              if (c.datasetIndex === 4) return 'Growth vs FY2022: +' + c.parsed.y + '%';
+              return c.dataset.label + ': $' + c.parsed.y.toLocaleString() + 'M';
+            }
+          }
+        })
+      },
+      scales: {
+        x: { stacked: true, ticks: { maxRotation: 0, callback: tk(S8) } },
+        y: {
+          stacked: true,
+          ticks: { callback: function(v) { return '$' + v + 'M'; } },
+          title: { display: true, text: 'Tax Revenue ($M)', font: { size: 9 } }
+        },
+        y2: {
+          position: 'right', grid: { drawOnChartArea: false },
+          ticks: { callback: function(v) { return '+' + v + '%'; } },
+          title: { display: true, text: '% Growth vs FY2022', font: { size: 9 }, color: '#c0392b' }
+        }
+      }
+    }
+  });
+})();
+
+/* ---- ARP CLIFF ---- */
+(function() {
+  var ctx = document.getElementById('c-arp').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: YRS,
+      datasets: [
+        { label: 'ARP Federal Funds',        data: [250,335,391,419,87,0,0,0,0,0],   backgroundColor: 'rgba(231,76,60,0.85)', stack: 'f', borderRadius: 2 },
+        { label: 'Other Inter-Fund Revenue', data: [51,46,64,68,0,66,66,160,67,67], backgroundColor: 'rgba(52,152,219,0.65)', stack: 'f', borderRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: TT
+      },
+      scales: {
+        x: { stacked: true, ticks: { maxRotation: 0, callback: tk(S10) } },
+        y: { stacked: true, ticks: { callback: function(v) { return '$' + v + 'M'; } } }
+      }
+    }
+  });
+})();
+
+/* ---- EXPENDITURE BY CLASS ---- */
+(function() {
+  var ctx = document.getElementById('c-expclass').getContext('2d');
+  var cats = ['Wages','Benefits','Contracts','Supplies','Contributions','Debt Service','Other Funds','Labor Reserve'];
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: cats,
+      datasets: [
+        { label: 'FY2022 Actual',    data: [1891,1690,1014,126,385,189,44,0],    backgroundColor: 'rgba(52,152,219,0.55)',  borderRadius: 2 },
+        { label: 'FY2024 Actual',    data: [2038,1663,1360,190,453,294,241,0],   backgroundColor: 'rgba(39,174,96,0.55)',   borderRadius: 2 },
+        { label: 'FY2026 Estimate',  data: [2413,1723,1578,171,477,362,75,102],  backgroundColor: 'rgba(201,146,10,0.75)', borderRadius: 2 },
+        { label: 'FY2027 Proposed',  data: [2462,1819,1653,165,450,431,49,39],   backgroundColor: 'rgba(192,57,43,0.7)',   borderRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) { return c.dataset.label + ': $' + c.parsed.x.toLocaleString() + 'M'; }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { callback: function(v) { return '$' + v + 'M'; } } },
+        y: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+})();
+
+/* ---- OBLIGATIONS TREND ---- */
+(function() {
+  var ctx = document.getElementById('c-obligtrend').getContext('2d');
+  // Adopted budgets for FY2022-2025 (actual overspend/underspend context)
+  var adopted = [null, null, 6336, 6569, 6843, 6968, null, null, null, null];
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: YRS,
+      datasets: [
+        {
+          label: 'Actual / Projected Obligations',
+          data: OBL,
+          borderColor: '#e74c3c',
+          backgroundColor: gr(ctx, 'rgba(192,57,43,0.25)', 'rgba(192,57,43,0.03)'),
+          fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 5,
+          pointBackgroundColor: OBL.map(function(_, i) {
+            return i < 4 ? '#e74c3c' : i === 4 ? '#e8a820' : '#9b59b6';
+          })
+        },
+        {
+          label: 'Adopted Budget',
+          data: adopted,
+          borderColor: 'rgba(127,140,141,0.7)',
+          backgroundColor: 'transparent',
+          borderDash: [5,4], borderWidth: 2,
+          pointStyle: 'diamond', pointRadius: 8,
+          pointBackgroundColor: 'rgba(127,140,141,0.5)',
+          fill: false, tension: 0, spanGaps: false
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) {
+              if (c.parsed.y === null) return null;
+              return c.dataset.label + ': $' + c.parsed.y.toLocaleString() + 'M';
+            },
+            afterLabel: function(c) {
+              var i = c.dataIndex;
+              if (c.datasetIndex === 0 && adopted[i] !== null) {
+                var diff = adopted[i] - OBL[i];
+                return 'Underspend vs adopted: $' + diff + 'M';
+              }
+              return null;
+            }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0, callback: tk(S10) } },
+        y: {
+          ticks: { callback: function(v) { return '$' + v + 'M'; } },
+          min: 4800
+        }
+      }
+    }
+  });
+})();
+
+/* ---- EMPLOYEE BENEFITS DEEP DIVE ---- */
+(function() {
+  var ctx = document.getElementById('c-benefits').getContext('2d');
+  var yrs = ['FY22','FY23','FY24','FY25','FY26','FY27','FY28','FY29','FY30'];
+  // Pension, Health/Medical, FICA+Other — stacked
+  var pension = [1000,1030,900,920,950,600,620,1100,580];
+  var health  = [484, 530, 560, 620, 680, 718, 745, 772, 790];
+  var fica    = [206, 210, 203, 210, 218, 242, 248, 255, 260];
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: yrs,
+      datasets: [
+        { label: 'Pension Contributions', data: pension, backgroundColor: 'rgba(26,82,118,0.85)',  stack: 'b', borderRadius: 2 },
+        { label: 'Health & Medical Ins.', data: health,  backgroundColor: 'rgba(192,57,43,0.8)',   stack: 'b', borderRadius: 2 },
+        { label: 'FICA & Other Benefits', data: fica,    backgroundColor: 'rgba(127,140,141,0.65)',stack: 'b', borderRadius: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) { return c.dataset.label + ': $' + c.parsed.y.toLocaleString() + 'M'; },
+            afterBody: function(items) {
+              var i = items[0].dataIndex;
+              var total = pension[i] + health[i] + fica[i];
+              return ['Total benefits: $' + total.toLocaleString() + 'M'];
+            }
+          }
+        })
+      },
+      scales: {
+        x: { stacked: true, ticks: { maxRotation: 0 } },
+        y: {
+          stacked: true,
+          ticks: { callback: function(v) { return '$' + v + 'M'; } },
+          title: { display: true, text: 'Benefits Cost ($M)', font: { size: 9 } }
+        }
+      }
+    }
+  });
+})();
+
+/* ---- VACANCY ---- */
+(function() {
+  var ctx = document.getElementById('c-vacancy').getContext('2d');
+  // Source: Philadelphia_Vacancy_Full_History.xlsx — Plans 0-4
+  // Filled = actual headcount Jun 30. Budget = max authorised positions.
+  var depts = ['Police','Fire','Prisons','Parks & Rec','Public Health','First Judicial','Human Services','L&I','Free Library','Sanitation'];
+
+  var f2020 = [7175, 2628, 1975, 647,  739,  1824, 406, 394, 677,  null];
+  var f2022 = [6651, 2667, 1393, 613,  689,  1686, 420, 346, 618,  null];
+  var f2024 = [6204, 2815, 1266, 680,  730,  1707, 435, 351, 814,  null];
+  var f2025 = [6118, 2851, 1549, 713,  774,  1724, 421, 370, 858,  1652];
+  var bud26 = [7625, 3392, 2186, 926,  873,  1745, 532, 442, 1009, 1893];
+  var bud27 = [7630, 3392, 2321, 935,  873,  1763, 510, 457, 1009, 1893];
+  // Jun 2025 vs FY2026 vacancy rates (4-tier: red≥30%, amber 20-29%, yellow 10-19%, green <10%)
+  var vacRates = [19.8, 15.9, 29.1, 23.0, 11.3, 1.2, 20.9, 16.3, 15.0, 12.7];
+
+  var fill25Colors = vacRates.map(function(r) {
+    return r >= 30 ? 'rgba(192,57,43,0.85)'
+         : r >= 20 ? 'rgba(230,126,34,0.85)'
+         : r >= 10 ? 'rgba(241,196,15,0.92)'
+         :           'rgba(39,174,96,0.85)';
+  });
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: depts,
+      datasets: [
+        {
+          label: 'Filled Jun 2020',
+          data: f2020,
+          backgroundColor: 'rgba(149,165,166,0.4)',
+          borderColor: 'rgba(149,165,166,0.65)',
+          borderWidth: 1, borderRadius: 2
+        },
+        {
+          label: 'Filled Jun 2022',
+          data: f2022,
+          backgroundColor: 'rgba(127,140,141,0.55)',
+          borderColor: 'rgba(127,140,141,0.75)',
+          borderWidth: 1, borderRadius: 2
+        },
+        {
+          label: 'Filled Jun 2024',
+          data: f2024,
+          backgroundColor: 'rgba(93,173,226,0.55)',
+          borderColor: 'rgba(93,173,226,0.75)',
+          borderWidth: 1, borderRadius: 2
+        },
+        {
+          label: 'Filled Jun 2025 \u2605',
+          data: f2025,
+          backgroundColor: fill25Colors,
+          borderRadius: 2
+        },
+        {
+          label: 'FY2026 Budget',
+          data: bud26,
+          backgroundColor: 'rgba(0,0,0,0)',
+          borderColor: 'rgba(201,146,10,0.9)',
+          borderWidth: 2, borderRadius: 2, type: 'bar'
+        },
+        {
+          label: 'FY2027 Proposed',
+          data: bud27,
+          backgroundColor: 'rgba(0,0,0,0)',
+          borderColor: 'rgba(26,111,168,0.85)',
+          borderWidth: 2, borderRadius: 2, type: 'bar'
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 8, font: { size: 10 } } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            title: function(items) { return items[0].label; },
+            label: function(c) {
+              if (c.parsed.y === null) return null;
+              var i = c.dataIndex, v = c.parsed.y.toLocaleString();
+              if (c.datasetIndex === 3) {
+                var gap = bud26[i] - c.parsed.y;
+                return 'Jun 2025: ' + v + '  |  Vacant vs FY26 budget: ' + gap.toLocaleString() + ' (' + vacRates[i] + '%)';
+              }
+              var labels2 = ['Jun 2020','Jun 2022','Jun 2024'];
+              if (c.datasetIndex <= 2) {
+                var d = f2025[i] !== null ? (f2025[i] - c.parsed.y) : null;
+                return labels2[c.datasetIndex] + ': ' + v + (d !== null ? '  \u2192  2025: ' + (d >= 0 ? '+' : '') + d : '');
+              }
+              return c.dataset.label + ': ' + v + ' positions';
+            }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, maxRotation: 20 } },
+        y: {
+          ticks: { callback: function(v) { return v.toLocaleString(); } },
+          title: { display: true, text: 'Positions', font: { size: 9 } }
+        }
+      }
+    }
+  });
+})();
+
+
+/* ---- PRIORITY / WHERE MONEY GOES ---- */
+(function() {
+  var ctx = document.getElementById('c-priority').getContext('2d');
+  var labels = [
+    'Employee Benefits','Police Dept','Purchase of Services',
+    'Wages — Other Depts','Fire Dept','Debt Service',
+    'Prisons','School District','Human Services (DHS)',
+    'Public Health','SEPTA Subsidy','Commerce Stimulus',
+    'Homeless Services','Library System','Housing Trust Fund'
+  ];
+  var vals = [1819,934,719,700,380,431,396,284,235,158,135,90,85,78,35];
+  var total = vals.reduce(function(a,b){return a+b;},0);
+  var colors = [
+    '#1a5276','#1a6fa8','#2980b9','#5dade2',
+    '#c0392b','#e74c3c',
+    '#922b21',
+    '#7d6608','#b07d00',
+    '#1e7e40','#27ae60','#52be80',
+    '#117864','#1abc9c',
+    '#6c3483'
+  ];
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'FY2027 Proposed ($M)',
+        data: vals,
+        backgroundColor: colors,
+        borderRadius: 3
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) {
+              return '$' + c.parsed.x.toLocaleString() + 'M — ' + (c.parsed.x / total * 100).toFixed(1) + '% of budget';
+            }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { callback: function(v) { return '$' + v + 'M'; } } },
+        y: { ticks: { font: { size: 10 } } }
+      }
+    }
+  });
+})();
+
+/* ---- EQUITY: PUBLIC SAFETY vs HUMAN SERVICES ---- */
+(function() {
+  var ctx = document.getElementById('c-equity').getContext('2d');
+  // Public Safety = Police + Fire + Prisons; Human Services = DHS + Public Health + Homeless
+  var pubsafe = [1370,1460,1570,1630,1680,1710,1740,1770,1800,1830];
+  var humsvc  = [436, 450, 468, 490, 500, 511, 518, 526, 534, 542];
+  var school  = [256, 260, 265, 284, 284, 284, 290, 295, 300, 305];
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: YRS,
+      datasets: [
+        {
+          label: 'Public Safety (Police+Fire+Prisons)',
+          data: pubsafe,
+          borderColor: '#e74c3c', backgroundColor: 'rgba(192,57,43,0.07)',
+          fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 4
+        },
+        {
+          label: 'Human Services (DHS+Health+Homeless)',
+          data: humsvc,
+          borderColor: '#27ae60', backgroundColor: 'rgba(39,174,96,0.07)',
+          fill: true, tension: 0.3, borderWidth: 2.5, pointRadius: 4
+        },
+        {
+          label: 'School District Contribution',
+          data: school,
+          borderColor: '#2980b9',
+          borderDash: [5,3], borderWidth: 1.8,
+          backgroundColor: 'transparent',
+          fill: false, tension: 0.2, pointRadius: 4
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) { return c.dataset.label + ': $' + c.parsed.y.toLocaleString() + 'M'; },
+            afterLabel: function(c) {
+              if (c.datasetIndex === 0) {
+                var ratio = (pubsafe[c.dataIndex] / humsvc[c.dataIndex]).toFixed(1);
+                return 'Safety:Human-Svc ratio = ' + ratio + ':1';
+              }
+              return null;
+            }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0, callback: tk(S10) } },
+        y: { ticks: { callback: function(v) { return '$' + v + 'M'; } } }
+      }
+    }
+  });
+})();
+
+/* ---- FORECAST: FUND BALANCE PROJECTIONS vs ACTUALS ---- */
+(function() {
+  var ctx = document.getElementById('c-forecast-fb').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: ['Plan 1\n(Jun 2022)','Plan 2\n(Jun 2023)','Plan 3\n(Jun 2024)','Actual\nFY2024','Plan 1\n(Jun 2022)','Plan 2\n(Jun 2023)','Plan 3\n(Jun 2024)','Actual\nFY2025'],
+      datasets: [
+        {
+          label: 'FY2024 Projections vs Actual',
+          data: [529, 628, 790, 943, null, null, null, null],
+          backgroundColor: [
+            'rgba(52,152,219,0.6)','rgba(52,152,219,0.6)','rgba(52,152,219,0.6)',
+            'rgba(39,174,96,0.85)',null,null,null,null
+          ],
+          borderRadius: 3
+        },
+        {
+          label: 'FY2025 Projections vs Actual',
+          data: [null, null, null, null, 715, 830, 915, 1179],
+          backgroundColor: [
+            null,null,null,null,
+            'rgba(155,89,182,0.6)','rgba(155,89,182,0.6)','rgba(155,89,182,0.6)',
+            'rgba(39,174,96,0.85)'
+          ],
+          borderRadius: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) {
+              if (c.parsed.y === null) return null;
+              return '$' + c.parsed.y + 'M';
+            }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0, font: { size: 9 } } },
+        y: {
+          beginAtZero: false, min: 400,
+          ticks: { callback: function(v) { return '$' + v + 'M'; } }
+        }
+      }
+    }
+  });
+})();
+
+/* ---- FORECAST: OBLIGATIONS BUDGETED vs ACTUAL ---- */
+(function() {
+  var ctx = document.getElementById('c-forecast-oblig').getContext('2d');
+  var yrs4 = ['FY2022','FY2023','FY2024','FY2025'];
+  var adopted = [5365, 5975, 6336, 6569];
+  var actual  = [5339, 5918, 6135, 6318];
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: yrs4,
+      datasets: [
+        {
+          label: 'Adopted Budget',
+          data: adopted,
+          backgroundColor: 'rgba(192,57,43,0)',
+          borderColor: 'rgba(192,57,43,0.75)',
+          borderWidth: 2,
+          borderRadius: 3
+        },
+        {
+          label: 'Actual Spending',
+          data: actual,
+          backgroundColor: 'rgba(39,174,96,0.7)',
+          borderRadius: 3
+        }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'top', labels: { boxWidth: 10, padding: 10 } },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) {
+              return c.dataset.label + ': $' + c.parsed.y.toLocaleString() + 'M';
+            },
+            afterBody: function(items) {
+              var i = items[0].dataIndex;
+              var gap = adopted[i] - actual[i];
+              return ['Underspend: $' + gap.toLocaleString() + 'M (' + (gap / adopted[i] * 100).toFixed(1) + '%)'];
+            }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { maxRotation: 0 } },
+        y: {
+          min: 5200,
+          ticks: { callback: function(v) { return '$' + v + 'M'; } }
+        }
+      }
+    }
+  });
+})();
+
+/* ---- LITTER INDEX MINI CHART ---- */
+(function() {
+  var el = document.getElementById('c-litter');
+  if (!el) return;
+  var ctx = el.getContext('2d');
+  var quarters = ['Q1 \'24','Q2 \'24','Q3 \'24','Q4 \'24','Q1 \'25','Q2 \'25','Q3 \'25','Q4 \'25'];
+  var scores = [2.48, 2.62, 2.55, 2.41, 2.38, 2.28, 2.22, 2.21];
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: quarters,
+      datasets: [{
+        label: 'Litter Index (lower = cleaner)',
+        data: scores,
+        borderColor: '#b07d00',
+        backgroundColor: 'rgba(201,146,10,0.12)',
+        fill: true, tension: 0.4, borderWidth: 2,
+        pointBackgroundColor: '#b07d00', pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: Object.assign({}, TT, {
+          callbacks: {
+            label: function(c) { return 'Litter score: ' + c.parsed.y + ' (0=clean, 4=very littered)'; }
+          }
+        })
+      },
+      scales: {
+        x: { ticks: { font: { size: 9 }, maxRotation: 0 }, grid: { display: false } },
+        y: { min: 2.0, max: 2.8, ticks: { font: { size: 9 }, callback: function(v) { return v.toFixed(1); } } }
+      }
+    }
+  });
+})();
+
+})(); // end IIFE
+</script>
+</body>
+</html>
